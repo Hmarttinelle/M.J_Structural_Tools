@@ -1,7 +1,7 @@
 # M.J. Structural Tools
 
 Este projeto é uma ferramenta de cálculo para dimensionamento de elementos estruturais 
-(Vigas, Pilares e Sapatas) em conformidade com o Eurocódigo 2, criada no âmbito da minha Dissertação para mestrado em IPV
+(Vigas e Pilares) em conformidade com o Eurocódigo 2, criada no âmbito da minha Dissertação para mestrado em IPV
 
 **Dedicado à memória de Marttinelle Jr.**
 
@@ -23,9 +23,6 @@ O sistema está preparado para dimensionar os seguintes elementos estruturais:
     * Verifica a esbelteza do pilar e calcula os efeitos de 2ª ordem, se necessário.
     * Garante a escolha de uma combinação de armadura simétrica e construtivamente adequada.
 
-* **Dimensionamento de Sapatas Isoladas:**
-    * Realiza o dimensionamento geotécnico (dimensões em planta) e estrutural (altura e armaduras).
-    * Verifica a segurança ao punçoamento e à flexão.
 
 * **Geração de Relatórios:**
     * Exporta uma memória de cálculo detalhada em formato PDF para cada dimensionamento.
@@ -114,6 +111,7 @@ Para executar este projeto no seu computador, siga os passos abaixo.
 
 ## Desenvolvimento Futuro (Próximos Passos)
 
+* [ ] Implementação futura do módulo de **sapatas isoladas**.
 Este projeto tem uma base sólida que pode ser expandida com novas funcionalidades, tais como:
 
 * [ ] Dimensionamento de vigas ao **esforço transverso** (cálculo de estribos).

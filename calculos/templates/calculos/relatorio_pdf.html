@@ -3,204 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <title>Relatório de Cálculo - {{ calculo.elemento }}</title>
-    
+
     <style>
         @page {
             size: A4;
-            margin: 1.5cm;
+            margin: 1.35cm 1.35cm 1.55cm 1.35cm;
             {% if system_config and system_config.background_image %}
-            background-image: url('{{ request.scheme }}://{{ request.get_host }}{{ system_config.background_image.url }}');
+            background-image: linear-gradient(rgba(248,251,255,.90), rgba(248,251,255,.90)), url('{{ request.scheme }}://{{ request.get_host }}{{ system_config.background_image.url }}');
             background-size: cover;
             background-position: center;
             {% endif %}
-            @bottom-center {
+            @bottom-left {
+                content: "M.J. Structural Tools v1.2";
+                font-size: 8pt;
+                color: #6b7b8f;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            }
+            @bottom-right {
                 content: "Página " counter(page) " de " counter(pages);
-                font-size: 9pt;
-                color: #888;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                font-size: 8pt;
+                color: #6b7b8f;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             }
         }
-        
+
+        :root { --primary: {{ system_config.primary_color|default:'#0d6efd' }}; }
+
+        * { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            font-size: 10pt;
-            line-height: 1.6;
-            color: #212529;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.48;
+            color: #17324d;
             margin: 0;
-            padding: 30px 40px; /* Margens imitando a div wrapper da aplicação */
-            {% if system_config and system_config.background_image %}
-            background-color: rgba(255, 255, 255, 0.95);
-            {% else %}
-            background-color: #ffffff;
-            {% endif %}
-            box-sizing: border-box;
+            padding: 0;
+            background: transparent;
         }
+        .container { width: 100%; }
 
-        .container {
+        .report-header {
             width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 18px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
         }
+        .report-brand { vertical-align: middle; }
+        .report-logo {
+            display: inline-block;
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            line-height: 34px;
+            font-weight: 700;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .report-brand-copy { display: inline-block; vertical-align: middle; }
+        .report-brand-copy strong { display: block; font-size: 12.5pt; color: #0f2d50; }
+        .report-brand-copy span { display: block; font-size: 8.2pt; color: #6c7d91; margin-top: 2px; }
+        .report-version { text-align: right; vertical-align: middle; color: #6c7d91; font-size: 8.5pt; }
+        .report-version strong { color: #0f2d50; }
 
+        .report-title-card {
+            background: rgba(255,255,255,.95);
+            border: 1px solid #dce6ef;
+            border-left: 5px solid var(--primary);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
         h1 {
-            color: {{ system_config.primary_color|default:'#0d6efd' }};
-            text-align: center;
-            font-size: 18pt;
-            margin-bottom: 20px;
-            font-weight: bold;
+            color: #0f2d50;
+            font-size: 17pt;
+            margin: 0 0 4px;
+            font-weight: 750;
+            text-align: left;
         }
-        
-        .subtitle {
-            text-align: center;
-            font-size: 10pt;
-            color: #6c757d;
-            margin-bottom: 10px;
-        }
+        .subtitle { color: #6c7d91; font-size: 8.7pt; margin: 0; }
 
         h4 {
-            color:  #6c757d;
-            text-align: center;
-            font-size: 10pt;
-            margin-top: 0;
-            margin-bottom: 5px;
+            color: #0f2d50;
+            text-align: left;
+            font-size: 10.5pt;
+            margin: 0 0 9px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #dce6ef;
         }
 
-        /* Dados de Entrada Form Block */
-        .dados-entrada-wrapper {
-            margin-bottom: 25px;
+        .section-card,
+        .dados-entrada-wrapper,
+        .desenho-wrapper,
+        .passo-a-passo {
+            background: rgba(255,255,255,.96);
+            border: 1px solid #dce6ef;
+            border-radius: 10px;
+            padding: 13px 14px;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
         }
+
         table.dados-entrada {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 15px 15px; 
+            border-spacing: 8px 8px;
         }
+        table.dados-entrada td { vertical-align: top; }
         .form-group-label {
-            font-weight: 500;
-            color: #495057;
-            font-size: 9pt;
+            font-weight: 600;
+            color: #58708b;
+            font-size: 8.1pt;
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
         .form-group-val {
             display: block;
-            padding: 8px 10px;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            background-color: #f8f9fa;
-            font-size: 9.5pt;
+            padding: 7px 9px;
+            border: 1px solid #dce6ef;
+            border-radius: 7px;
+            background: #f7fafc;
+            font-size: 9pt;
+            color: #17324d;
             width: 100%;
-            box-sizing: border-box;
         }
-        
-        /* Resultado Final */
+
         .resultado {
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 5px solid;
-            margin-bottom: 25px;
-            page-break-inside: avoid;
-        }
-        .sucesso {
-            background-color: #d1e7dd;
-            border-color: #0f5132;
-            color: #0f5132;
-        }
-        .resultado h4 {
-            color: #0f5132;
-            margin: 0 0 10px 0;
-            font-size: 11pt;
-        }
-        .resultado p {
-            margin: 5px 0;
-        }
-
-        /* Layout em 2 Colunas: Desenho + Passos */
-        .resultado-detalhado {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 20px 0;
-            table-layout: fixed;
-            margin-top: 30px;
-        }
-        .col-esquerda, .col-direita {
-            vertical-align: top;
-        }
-        /* Ajuste de largura se houver desenho */
-        .col-esquerda {
-            width: 38%;
-        }
-        .col-direita {
-            width: 62%;
-        }
-        
-        .desenho-wrapper {
-            border: 1px solid #dee2e6;
-            padding: 15px;
-            border-radius: 6px;
-            background-color: #fff;
-            text-align: center;
-            page-break-inside: avoid;
-        }
-        .desenho-wrapper svg {
-            max-width: 100%;
-            height: auto;
-        }
-
-        .passo-a-passo {
-            background-color: #fdfdfd;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 15px;
-        }
-        .passo-a-passo h4 {
-            border-bottom: 2px solid {{ system_config.primary_color|default:'#0d6efd' }};
-            padding-bottom: 5px;
+            background: linear-gradient(135deg, #eefbf4, #f8fffb);
+            border: 1px solid #c8ead7;
+            border-left: 5px solid #16a765;
+            color: #17324d;
+            padding: 13px 15px;
+            border-radius: 10px;
             margin-bottom: 15px;
-        }
-        .passo-a-passo ul {
-            list-style: none;
-            padding-left: 0;
-            margin: 0;
-        }
-        .passo-a-passo li {
-            padding: 12px 0;
-            border-bottom: 1px solid #eee;
             page-break-inside: avoid;
         }
-        .passo-a-passo li:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-        
-        .formula {
-            color: #212529;
-            margin: 6px 0;
-            font-family: Consolas, "Courier New", monospace;
-            font-size: 9.5pt;
-        }
-        .calculo-text {
-            font-size: 9.5pt;
-            margin-left: 10px;
-            line-height: 1.6;
-        }
+        .resultado h4 { color: #0c7c49; border-bottom-color: #c8ead7; }
+        .resultado p { margin: 4px 0; }
+        .resultado hr { border: 0; border-top: 1px solid #c8ead7 !important; }
 
+        .desenho-wrapper { text-align: center; }
+        .desenho-wrapper h4 { border-bottom: 2px solid var(--primary) !important; }
+        .desenho-wrapper svg { max-width: 100%; height: auto; }
+
+        .passo-a-passo { page-break-inside: auto; }
+        .passo-a-passo h4 { border-bottom: 2px solid var(--primary); }
+        .passo-a-passo ul { list-style: none; padding: 0; margin: 0; }
+        .passo-a-passo li {
+            padding: 9px 0;
+            border-bottom: 1px solid #e7eef5;
+            page-break-inside: avoid;
+        }
+        .passo-a-passo li:last-child { border-bottom: 0; }
+        .formula {
+            color: #17324d;
+            background: #f4f8fb;
+            border-left: 3px solid var(--primary);
+            margin: 6px 0;
+            padding: 6px 8px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 8.8pt;
+            border-radius: 4px;
+        }
+        .calculo-text { font-size: 8.8pt; margin-top: 4px; color: #405a74; }
+
+        .report-note {
+            margin-top: 12px;
+            padding: 8px 10px;
+            border-radius: 7px;
+            background: #f5f8fb;
+            color: #66798e;
+            font-size: 7.8pt;
+            border: 1px solid #e1e8ef;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        
+        <table class="report-header">
+            <tr>
+                <td class="report-brand">
+                    <span class="report-logo">MJ</span>
+                    <span class="report-brand-copy">
+                        <strong>M.J. Structural Tools</strong>
+                        <span>Ferramenta de Dimensionamento dos Elementos Estruturais</span>
+                    </span>
+                </td>
+                <td class="report-version">
+                    <strong>v1.2</strong><br>Relatório de cálculo
+                </td>
+            </tr>
+        </table>
+
+        <div class="report-title-card">
+
         {% if calculo.elemento == 'Viga' %}
             <h1>Dimensionamento de Viga à Flexão Simples</h1>
         {% elif calculo.elemento == 'Pilar' %}
-            <h1>Dimensionamento de Pilares</h1>
-        {% elif calculo.elemento == 'Sapata' %}
-            <h1>Dimensionamento de Sapatas</h1>
+            <h1>Dimensionamento de Pilar à Flexão Composta Reta</h1>
         {% else %}
             <h1>Dimensionamento de {{ calculo.elemento }}</h1>
         {% endif %}
 
-        <h4>Dados de Entrada:</h4>
-        
+        <p class="subtitle">Memória de cálculo gerada automaticamente pela aplicação</p>
+        </div>
+
         <!-- Dados de Entrada Simulando o Formulário -->
         <div class="dados-entrada-wrapper">
+            <h4>Dados de Entrada</h4>
             <table class="dados-entrada">
                 <tr>
                 {% for item in calculo.input_data_formatado %}
@@ -220,21 +233,49 @@
 
         <!-- Resultado Final -->
         <div class="resultado sucesso">
-            <h4>Resultado Final:</h4>
-            
+            <h4>Resultado Final</h4>
+
             {% if calculo.resultado_final.mensagem %}
                 <p><strong>{{ calculo.resultado_final.mensagem }}</strong></p>
             {% else %}
                 <p><strong>Cálculo efetuado com sucesso.</strong></p>
             {% endif %}
 
-            {% if calculo.elemento == 'Viga' or calculo.elemento == 'Pilar' %}
-                <p style="font-size: 11pt; margin-top: 10px; margin-bottom: 10px;">
-                    <strong>Armadura Ótima a Adotar: {{ calculo.resultado_final.combinacao_final }} ({{ calculo.resultado_final.As_final_cm2 }} cm²)</strong>
-                </p>
+            {% if calculo.elemento == 'Viga' %}
+
+                {% if calculo.resultado_final.tipo_secao == 'armadura_compressao' %}
+                    <p style="font-size: 11pt; margin-top: 10px; margin-bottom: 5px;">
+                        <strong>Armadura de Tração a Adotar: {{ calculo.resultado_final.combinacao_final }} ({{ calculo.resultado_final.As_final_cm2 }} cm²)</strong>
+                    </p>
+                    <p style="font-size: 11pt; margin-top: 5px; margin-bottom: 10px;">
+                        <strong>Armadura de Compressão a Adotar: {{ calculo.resultado_final.combinacao_compressao }} ({{ calculo.resultado_final.Asc_final_cm2 }} cm²)</strong>
+                    </p>
+                {% else %}
+                    <p style="font-size: 11pt; margin-top: 10px; margin-bottom: 10px;">
+                        <strong>Armadura de Tração a Adotar: {{ calculo.resultado_final.combinacao_final }} ({{ calculo.resultado_final.As_final_cm2 }} cm²)</strong>
+                    </p>
+                {% endif %}
+
+                {% if calculo.resultado_final.M_Rd_kNm %}
+                    <p style="font-size: 9.5pt;">
+                        <strong>Momento resistente:</strong>
+                        M<sub>Rd</sub> = {{ calculo.resultado_final.M_Rd_kNm }} kNm
+                    </p>
+                {% endif %}
+
+                {% if calculo.resultado_final.xi_final %}
+                    <p style="font-size: 9.5pt;">
+                        <strong>Ductilidade:</strong>
+                        x/d = {{ calculo.resultado_final.xi_final }}
+                        {% if calculo.resultado_final.verificacao_ductilidade %}
+                            ≤ 0,45
+                        {% endif %}
+                    </p>
+                {% endif %}
+
                 {% if calculo.resultado_final.combinacao_mista or calculo.resultado_final.combinacao_unica %}
                     <hr style="border: 0; border-top: 1px solid #a3cfbb; margin: 10px 0;">
-                    <p style="font-size: 9pt; color: #146c43;"><strong>Opções Consideradas:</strong></p>
+                    <p style="font-size: 9pt; color: #146c43;"><strong>Opções de Armadura de Tração Consideradas:</strong></p>
                     {% if calculo.resultado_final.combinacao_mista %}
                         <p style="font-size: 9pt; margin: 3px 0;">• <strong style="font-family:-apple-system, sans-serif;">Opção Mista:</strong> {{ calculo.resultado_final.combinacao_mista.combinacao_str }} ({{ calculo.resultado_final.combinacao_mista.As_final_cm2 }} cm²)</p>
                     {% endif %}
@@ -243,13 +284,62 @@
                     {% endif %}
                 {% endif %}
 
-            {% elif calculo.elemento == 'Sapata' %}
-                {% if calculo.resultado_final.tipo_sapata %}
-                <p><strong>Tipo de sapata:</strong> {{ calculo.resultado_final.tipo_sapata }}</p>
+            {% elif calculo.elemento == 'Pilar' %}
+                <p style="font-size: 11pt; margin-top: 10px; margin-bottom: 10px;">
+                    <strong>Armadura a Adotar: {{ calculo.resultado_final.combinacao_final }} ({{ calculo.resultado_final.As_final_cm2 }} cm²)</strong>
+                </p>
+
+                <p style="font-size: 9.5pt; line-height: 1.65; margin-top: 8px;">
+                    <strong>Comprimento efetivo l₀:</strong> {{ calculo.resultado_final.l0_m|floatformat:3 }} m<br>
+                    <strong>Imperfeição eᵢ:</strong> {{ calculo.resultado_final.e_i_mm|floatformat:2 }} mm
+                    &nbsp;|&nbsp;
+                    <strong>Mᵢ:</strong> {{ calculo.resultado_final.M_i_kNm|floatformat:2 }} kNm<br>
+
+                    {% if calculo.resultado_final.usar_momentos_extremidade %}
+                        <strong>Momentos da análise:</strong>
+                        M₀₁,an = {{ calculo.resultado_final.M_01_analise_kNm|floatformat:2 }} kNm
+                        &nbsp;|&nbsp;
+                        M₀₂,an = {{ calculo.resultado_final.M_02_analise_kNm|floatformat:2 }} kNm<br>
+                        <strong>Com imperfeição:</strong>
+                        M₀₁ = {{ calculo.resultado_final.M_01_kNm|floatformat:2 }} kNm
+                        &nbsp;|&nbsp;
+                        M₀₂ = {{ calculo.resultado_final.M_02_kNm|floatformat:2 }} kNm<br>
+                        <strong>rₘ (momentos da análise):</strong> {{ calculo.resultado_final.r_m|floatformat:4 }}
+                        &nbsp;|&nbsp;
+                        <strong>C:</strong> {{ calculo.resultado_final.C_esbelteza|floatformat:4 }}<br>
+                        <strong>M₀e:</strong> {{ calculo.resultado_final.M0e_kNm|floatformat:2 }} kNm<br>
+                    {% else %}
+                        <strong>M₁ = M_Ed + Mᵢ:</strong> {{ calculo.resultado_final.M1_Ed_kNm|floatformat:2 }} kNm<br>
+                        <strong>M₀Ed adotado:</strong> {{ calculo.resultado_final.M0_Ed_kNm|floatformat:2 }} kNm<br>
+                    {% endif %}
+
+                    <strong>Excentricidade mínima e₀:</strong> {{ calculo.resultado_final.e0_mm|floatformat:2 }} mm
+                    &nbsp;|&nbsp;
+                    <strong>M_min:</strong> {{ calculo.resultado_final.M_min_kNm|floatformat:2 }} kNm<br>
+                    <strong>Classificação:</strong> {{ calculo.resultado_final.classificacao }}<br>
+                    <strong>λ:</strong> {{ calculo.resultado_final.lambda|floatformat:2 }}
+                    &nbsp;|&nbsp;
+                    <strong>λ_lim:</strong> {{ calculo.resultado_final.lambda_lim|floatformat:2 }}<br>
+                    <strong>M₂:</strong> {{ calculo.resultado_final.M2_kNm|floatformat:2 }} kNm
+                    &nbsp;|&nbsp;
+                    <strong>M_Ed,total:</strong> {{ calculo.resultado_final.M_Ed_total_kNm|floatformat:2 }} kNm<br>
+                    {% if calculo.resultado_final.usar_momentos_extremidade %}
+                        <strong>Termo governante:</strong> {{ calculo.resultado_final.termo_momento_governante }}<br>
+                    {% endif %}
+                    <strong>M_Rd:</strong> {{ calculo.resultado_final.M_Rd_kNm|floatformat:2 }} kNm
+                </p>
+
+                {% if calculo.resultado_final.combinacao_mista or calculo.resultado_final.combinacao_unica %}
+                    <hr style="border: 0; border-top: 1px solid #a3cfbb; margin: 10px 0;">
+                    <p style="font-size: 9pt; color: #146c43;"><strong>Opções resistentes:</strong></p>
+                    {% if calculo.resultado_final.combinacao_unica %}
+                        <p style="font-size: 9pt; margin: 3px 0;">• <strong style="font-family:-apple-system, sans-serif;">Diâmetro único:</strong> {{ calculo.resultado_final.combinacao_unica.combinacao_str }} ({{ calculo.resultado_final.combinacao_unica.As_final_cm2 }} cm²)</p>
+                    {% endif %}
+                    {% if calculo.resultado_final.combinacao_mista %}
+                        <p style="font-size: 9pt; margin: 3px 0;">• <strong style="font-family:-apple-system, sans-serif;">Opção mista:</strong> {{ calculo.resultado_final.combinacao_mista.combinacao_str }} ({{ calculo.resultado_final.combinacao_mista.As_final_cm2 }} cm²)</p>
+                    {% endif %}
                 {% endif %}
-                <p><strong>Dimensões (A x B x H):</strong> {{ calculo.resultado_final.dimensoes }}</p>
-                <p><strong>Armadura Inferior (Dir. X):</strong> {{ calculo.resultado_final.armadura_x }}</p>
-                <p><strong>Armadura Inferior (Dir. Y):</strong> {{ calculo.resultado_final.armadura_y }}</p>
+
             {% endif %}
         </div>
 
@@ -262,16 +352,33 @@
                     <div style="max-width: 300px; margin: 0 auto;">
                         {{ calculo.desenho_svg|safe }}
                     </div>
-                {% elif calculo.elemento == 'Sapata' %}
-                    <div style="margin-bottom:15px; text-align: center;">
-                        <strong style="display:block; text-align:left; color:#6c757d; margin-bottom:5px;">Planta</strong>
-                        {{ calculo.desenho_planta_svg|safe }}
-                    </div>
-                    <div style="text-align: center;">
-                        <strong style="display:block; text-align:left; color:#6c757d; margin-bottom:5px;">Corte A-A</strong>
-                        {{ calculo.desenho_corte_svg|safe }}
-                    </div>
+
+                    {% if calculo.elemento == 'Viga' %}
+                        {% if calculo.resultado_final.tipo_secao == 'simplesmente_armada' %}
+                            <p style="font-size: 8.5pt; color: #6c757d; margin-top: 8px; line-height: 1.4;">
+                                Nota: os varões superiores representados correspondem à armadura construtiva de montagem e não são contabilizados na resistência principal à flexão.
+                            </p>
+                        {% elif calculo.resultado_final.tipo_secao == 'armadura_compressao' %}
+                            <p style="font-size: 8.5pt; color: #6c757d; margin-top: 8px;">
+                                Inferior: {{ calculo.resultado_final.combinacao_final }}
+                                &nbsp;&nbsp;|&nbsp;&nbsp;
+                                Superior: {{ calculo.resultado_final.combinacao_compressao }}
+                            </p>
+                        {% endif %}
+                    {% endif %}
+
                 {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if calculo.resultado_final.graficos_materiais_svg %}
+        <div class="desenho-wrapper" style="margin-bottom:25px;page-break-inside:avoid;">
+            <h4 style="text-align:left;border-bottom:2px solid {{ system_config.primary_color|default:'#0d6efd' }};padding-bottom:5px;margin-bottom:15px;">
+                Estado limite resistente — betão e aço
+            </h4>
+            <div style="max-width:680px;margin:0 auto;text-align:center;">
+                {{ calculo.resultado_final.graficos_materiais_svg|safe }}
             </div>
         </div>
         {% endif %}
@@ -293,7 +400,11 @@
             </ul>
         </div>
         {% endif %}
-        
+
+        <div class="report-note">
+            Documento gerado pela M.J. Structural Tools v1.2. Os resultados devem ser interpretados no âmbito das hipóteses e limitações do modelo de cálculo implementado.
+        </div>
+
     </div>
 </body>
 </html>

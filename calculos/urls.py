@@ -12,8 +12,8 @@ urlpatterns = [
     # URL para a página de pilares
     path('pilar/', views.pilar_view, name='pilar_dimensionamento'),
 
-    # URL para a página de sapatas
-    path('sapata/', views.sapata_view, name='sapata_dimensionamento'),
+    # Módulo de sapatas: página informativa, sem dimensionamento
+    path('sapata/', views.sapata_view, name='sapata_modulo'),
     
     # URL para a página de historico
     path('historico/', views.historico_view, name='historico_calculos'),

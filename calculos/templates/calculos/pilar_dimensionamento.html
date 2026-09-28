@@ -2,221 +2,129 @@
 {% load static %}
 
 {% block title %}Dimensionamento de Pilares{% endblock %}
-
 {% block content %}
-<a href="{% url 'pagina_inicial' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao Menu</a>
-<h1>Dimensionamento de Pilar à Flexão Composta</h1>
-<p>Insira os dados.</p>
+<div class="engineering-page">
+    <div class="page-breadcrumb"><a href="{% url 'pagina_inicial' %}"><i class="fa-solid fa-house"></i> Menu Principal</a><i class="fa-solid fa-chevron-right"></i><span>Dimensionamento de Pilar</span></div>
+    <header class="engineering-header column-header">
+        <div class="engineering-header-icon"><i class="fa-solid fa-i-cursor"></i></div>
+        <div><h1>Dimensionamento de Pilar</h1><p>Flexão composta reta e verificação da esbelteza segundo a EN 1992-1-1.</p></div>
+    </header>
 
-<form method="post">
-    {% csrf_token %}
-    <div class="form-group"><label>Largura (b) [mm]:</label><input type="number" name="b"
-            value="{{ input_data.b|default:'300' }}" required min="1"></div>
-    <div class="form-group"><label>Altura (h) [mm]:</label><input type="number" name="h"
-            value="{{ input_data.h|default:'400' }}" required min="1"></div>
-    <div class="form-group"><label>Comprimento Real (l) [m]:</label><input type="number" step="any" name="l"
-            value="{{ input_data.l|default:'3.5' }}" required min="0.1"></div>
-
-    <div class="form-group form-group-full">
-        <label>Condições de Apoio (Ligações)</label>
-        <div class="ligacao-wrapper">
-            <div class="ligacao-selector">
-                <span>Topo:</span>
-                <div class="ligacao-options">
-                    <label class="{% if input_data.lig_topo == 'artic' or not input_data.lig_topo %}active{% endif %}">
-                        <input type="radio" name="lig_topo" value="artic" {% if input_data.lig_topo == 'artic' or not input_data.lig_topo %}checked{% endif %}>
-                        <span class="label-text">Articulado</span>
-                        <img src="{% static 'calculos/icons/artic.svg' %}" alt="Articulado">
-                    </label>
-                    <label class="{% if input_data.lig_topo == 'encab' %}active{% endif %}">
-                        <input type="radio" name="lig_topo" value="encab" {% if input_data.lig_topo == 'encab' %}checked{% endif %}>
-                        <span class="label-text">Encastrado</span>
-                        <img src="{% static 'calculos/icons/encab.svg' %}" alt="Encastrado">
-                    </label>
-                    <label class="{% if input_data.lig_topo == 'livre' %}active{% endif %}">
-                        <input type="radio" name="lig_topo" value="livre" {% if input_data.lig_topo == 'livre' %}checked{% endif %}>
-                        <span class="label-text">Livre</span>
-                        <img src="{% static 'calculos/icons/livre.svg' %}" alt="Livre">
-                    </label>
+    <div class="engineering-workbench column-workbench results-below-input">
+        <div class="engineering-main-column">
+        <section class="technical-card input-card">
+            <form method="post" id="form-pilar" class="engineering-form">
+                {% csrf_token %}
+                <div class="form-section-block">
+                    <div class="section-tab-title"><span>1</span><div><strong>Geometria e materiais</strong><small>Definição da secção e propriedades resistentes</small></div></div>
+                    <div class="field-grid two-columns">
+                        <div class="form-group"><label>Largura <span>b [mm]</span></label><input type="number" step="any" name="b" value="{{ input_data.b|default:'300' }}" required min="1"></div>
+                        <div class="form-group"><label>Altura <span>h [mm]</span></label><input type="number" step="any" name="h" value="{{ input_data.h|default:'400' }}" required min="1"></div>
+                        <div class="form-group"><label>Comprimento real <span>l [m]</span></label><input type="number" step="any" name="l" id="comprimento-real" value="{{ input_data.l|default:'3.50' }}" required min="0.1"></div>
+                        <div class="form-group"><label>Recobrimento nominal <span>c<sub>nom</sub> [mm]</span></label><input type="number" step="any" name="c_nom" value="{{ input_data.c_nom|default:'30' }}" required min="1"></div>
+                        <div class="form-group"><label>Classe do Betão</label><select name="f_ck" class="form-control"><option value="20" {% if input_data.f_ck == '20' %}selected{% endif %}>C20/25</option><option value="25" {% if not input_data.f_ck or input_data.f_ck == '25' %}selected{% endif %}>C25/30</option><option value="30" {% if input_data.f_ck == '30' %}selected{% endif %}>C30/37</option><option value="35" {% if input_data.f_ck == '35' %}selected{% endif %}>C35/45</option><option value="40" {% if input_data.f_ck == '40' %}selected{% endif %}>C40/50</option><option value="45" {% if input_data.f_ck == '45' %}selected{% endif %}>C45/55</option><option value="50" {% if input_data.f_ck == '50' %}selected{% endif %}>C50/60</option></select></div>
+                        <div class="form-group"><label>Classe do Aço</label><select name="f_yk" class="form-control"><option value="400" {% if input_data.f_yk == '400' %}selected{% endif %}>A400</option><option value="500" {% if not input_data.f_yk or input_data.f_yk == '500' %}selected{% endif %}>A500</option></select></div>
+                    </div>
                 </div>
-            </div>
-            <div class="ligacao-selector">
-                <span>Base:</span>
-                <div class="ligacao-options">
-                    <label class="{% if input_data.lig_base == 'artic' %}active{% endif %}">
-                        <input type="radio" name="lig_base" value="artic" {% if input_data.lig_base == 'artic' %}checked{% endif %}>
-                        <span class="label-text">Articulado</span>
-                        <img src="{% static 'calculos/icons/artic.svg' %}" alt="Articulado">
-                    </label>
-                    <label class="{% if input_data.lig_base == 'encab' or not input_data.lig_base %}active{% endif %}">
-                        <input type="radio" name="lig_base" value="encab" {% if input_data.lig_base == 'encab' or not input_data.lig_base %}checked{% endif %}>
-                        <span class="label-text">Encastrado</span>
-                        <img src="{% static 'calculos/icons/encab.svg' %}" alt="Encastrado">
-                    </label>
+
+                <div class="form-section-block">
+                    <div class="section-tab-title"><span>2</span><div><strong>Esforços de cálculo</strong><small>Esforço axial e momentos de primeira ordem</small></div></div>
+                    <div class="field-grid two-columns">
+                        <div class="form-group"><label>Esforço axial <span>N<sub>Ed</sub> [kN]</span></label><input type="number" step="any" name="N_Ed" value="{{ input_data.N_Ed|default:'800' }}" required min="0.1"></div>
+                        <div class="form-group" id="grupo-momento-simples"><label>Momento de 1.ª ordem <span>M<sub>Ed</sub> [kNm]</span></label><input type="number" step="any" name="M_Ed" id="momento-ed" value="{{ input_data.M_Ed|default:'100' }}" min="0"><small>Modo simples: M₀₁ = M₀₂.</small></div>
+                    </div>
+                    <label class="option-card"><input type="checkbox" name="usar_momentos_extremidade" id="usar-momentos-extremidade" {% if input_data.usar_momentos_extremidade %}checked{% endif %}><span class="option-card-icon"><i class="fa-solid fa-wave-square"></i></span><span><strong>Considerar momentos distintos nas extremidades</strong><small>Utilize valores com sinal para representar a distribuição real dos momentos.</small></span></label>
+                    <div id="grupo-momentos-extremidade" class="conditional-panel"><div class="field-grid two-columns"><div class="form-group"><label>Extremidade 1 <span>M₀₁ [kNm]</span></label><input type="number" step="any" name="M_01" id="momento-01" value="{{ input_data.M_01|default:'' }}"></div><div class="form-group"><label>Extremidade 2 <span>M₀₂ [kNm]</span></label><input type="number" step="any" name="M_02" id="momento-02" value="{{ input_data.M_02|default:'' }}"></div></div></div>
                 </div>
+
+                <div class="form-section-block">
+                    <div class="section-tab-title"><span>3</span><div><strong>Estabilidade</strong><small>Condições de ligação, comprimento efetivo e fluência</small></div></div>
+                    <div class="form-group"><label>Condições de Ligação</label><select name="cond_ligacao" class="form-control" id="cond-ligacao"><option value="artic-artic" {% if input_data.cond_ligacao == 'artic-artic' %}selected{% endif %}>Articulado - Articulado</option><option value="encab-artic" {% if not input_data.cond_ligacao or input_data.cond_ligacao == 'encab-artic' %}selected{% endif %}>Encastrado - Articulado</option><option value="artic-encab" {% if input_data.cond_ligacao == 'artic-encab' %}selected{% endif %}>Articulado - Encastrado</option><option value="encab-encab" {% if input_data.cond_ligacao == 'encab-encab' %}selected{% endif %}>Encastrado - Encastrado</option><option value="encab-livre" {% if input_data.cond_ligacao == 'encab-livre' %}selected{% endif %}>Encastrado - Livre</option><option value="livre-encab" {% if input_data.cond_ligacao == 'livre-encab' %}selected{% endif %}>Livre - Encastrado</option></select></div>
+                    <div class="option-grid">
+                        <label class="option-card"><input type="checkbox" name="usar_l0_manual" id="usar-l0-manual" {% if input_data.usar_l0_manual %}checked{% endif %}><span class="option-card-icon"><i class="fa-solid fa-ruler-vertical"></i></span><span><strong>Introduzir l₀ manualmente</strong><small>Substitui a estimativa a partir das condições de ligação.</small></span></label>
+                        <label class="option-card"><input type="checkbox" name="considerar_fluencia" id="considerar-fluencia" {% if input_data.considerar_fluencia %}checked{% endif %}><span class="option-card-icon"><i class="fa-solid fa-hourglass-half"></i></span><span><strong>Considerar fluência</strong><small>Ativa o coeficiente efetivo de fluência no cálculo.</small></span></label>
+                    </div>
+                    <div class="conditional-grid"><div id="grupo-l0-manual" class="conditional-panel"><div class="form-group"><label>Comprimento efetivo <span>l₀ [m]</span></label><input type="number" step="any" name="l0_manual" id="l0-manual" value="{{ input_data.l0_manual|default:'' }}" min="0.1"></div></div><div id="grupo-fluencia" class="conditional-panel"><div class="form-group"><label>Coeficiente efetivo <span>φ<sub>ef</sub></span></label><input type="number" step="0.01" name="phi_ef" id="phi-ef" value="{{ input_data.phi_ef|default:'0.87' }}" min="0"></div></div></div>
+                </div>
+
+                <div class="form-actions engineering-actions"><button type="submit" class="btn-principal"><i class="fa-solid fa-calculator"></i> Dimensionar</button><button type="button" id="limparBtn" class="btn-secundario"><i class="fa-solid fa-eraser"></i> Limpar</button></div>
+            </form>
+        </section>
+
+        {% if resultado %}
+        <section class="technical-card result-detail-card {% if resultado.status == 'Sucesso' %}result-ok{% else %}result-error{% endif %}">
+            <div class="technical-card-heading compact">
+                <div>
+                    <span class="eyebrow">Resultado final</span>
+                    <h2>{% if resultado.status == 'Sucesso' %}Dimensionamento do pilar{% else %}Verifique os dados introduzidos{% endif %}</h2>
+                </div>
+                <span class="status-dot"><i class="fa-solid {% if resultado.status == 'Sucesso' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i></span>
             </div>
+            <p class="result-message result-message-large">{{ resultado.mensagem }}</p>
+
+            {% if resultado.status == 'Sucesso' %}
+            <div class="result-highlight-box">
+                <span>Armadura a adotar</span>
+                <strong>{{ resultado.combinacao_final }}</strong>
+                <small>A<sub>s</sub> = {{ resultado.As_final_cm2 }} cm²</small>
+            </div>
+
+            <div class="result-description-list">
+                <div class="result-description-row"><span class="result-description-label">Comprimento efetivo</span><span class="result-description-value">l₀ = {{ resultado.l0_m|floatformat:3 }} m</span></div>
+                {% if resultado.e_i_mm != None or resultado.M_i_kNm != None %}<div class="result-description-row"><span class="result-description-label">Imperfeição geométrica</span><span class="result-description-value">eᵢ = {{ resultado.e_i_mm|floatformat:2 }} mm{% if resultado.M_i_kNm != None %} &nbsp; | &nbsp; Mᵢ = {{ resultado.M_i_kNm|floatformat:2 }} kNm{% endif %}</span></div>{% endif %}
+                {% if resultado.usar_momentos_extremidade %}
+                    {% if resultado.M_01_kNm != None or resultado.M_02_kNm != None %}<div class="result-description-row"><span class="result-description-label">Momentos nas extremidades</span><span class="result-description-value">M₀₁ = {{ resultado.M_01_kNm|floatformat:2 }} kNm &nbsp; | &nbsp; M₀₂ = {{ resultado.M_02_kNm|floatformat:2 }} kNm</span></div>{% endif %}
+                    {% if resultado.M0e_kNm != None %}<div class="result-description-row"><span class="result-description-label">Momento equivalente</span><span class="result-description-value">M₀e = {{ resultado.M0e_kNm|floatformat:2 }} kNm</span></div>{% endif %}
+                {% else %}
+                    {% if resultado.M1_Ed_kNm != None %}<div class="result-description-row"><span class="result-description-label">Momento de 1.ª ordem com imperfeição</span><span class="result-description-value">M₁ = M<sub>Ed</sub> + Mᵢ = {{ resultado.M1_Ed_kNm|floatformat:2 }} kNm</span></div>{% endif %}
+                    {% if resultado.M0_Ed_kNm != None %}<div class="result-description-row"><span class="result-description-label">Momento de primeira ordem adotado</span><span class="result-description-value">M₀Ed = {{ resultado.M0_Ed_kNm|floatformat:2 }} kNm</span></div>{% endif %}
+                {% endif %}
+                {% if resultado.e0_mm != None or resultado.M_min_kNm != None %}<div class="result-description-row"><span class="result-description-label">Excentricidade mínima</span><span class="result-description-value">e₀ = {{ resultado.e0_mm|floatformat:2 }} mm{% if resultado.M_min_kNm != None %} &nbsp; | &nbsp; M<sub>min</sub> = {{ resultado.M_min_kNm|floatformat:2 }} kNm{% endif %}</span></div>{% endif %}
+                <div class="result-description-row"><span class="result-description-label">Classificação do pilar</span><span class="result-description-value">{{ resultado.classificacao }}</span></div>
+                <div class="result-description-row"><span class="result-description-label">Esbelteza</span><span class="result-description-value">λ = {{ resultado.lambda|floatformat:2 }} &nbsp; | &nbsp; λ<sub>lim</sub> = {{ resultado.lambda_lim|floatformat:2 }}</span></div>
+                {% if resultado.M2_kNm != None %}<div class="result-description-row"><span class="result-description-label">Momento de segunda ordem</span><span class="result-description-value">M₂ = {{ resultado.M2_kNm|floatformat:2 }} kNm</span></div>{% endif %}
+                <div class="result-description-row"><span class="result-description-label">Momento total de dimensionamento</span><span class="result-description-value">M<sub>Ed,total</sub> = {{ resultado.M_Ed_total_kNm|floatformat:2 }} kNm</span></div>
+                <div class="result-description-row"><span class="result-description-label">Momento resistente</span><span class="result-description-value">M<sub>Rd</sub> = {{ resultado.M_Rd_kNm|floatformat:2 }} kNm</span></div>
+                {% if resultado.N_Rd_kN != None %}<div class="result-description-row"><span class="result-description-label">Esforço normal resistente</span><span class="result-description-value">N<sub>Rd</sub> = {{ resultado.N_Rd_kN|floatformat:2 }} kN</span></div>{% endif %}
+            </div>
+
+            {% if resultado.combinacao_unica or resultado.combinacao_mista %}
+            <div class="result-options-block">
+                <strong>Opções resistentes</strong>
+                {% if resultado.combinacao_unica %}<p><span>Diâmetro único:</span> {{ resultado.combinacao_unica.combinacao_str }} ({{ resultado.combinacao_unica.As_final_cm2 }} cm²)</p>{% endif %}
+                {% if resultado.combinacao_mista %}<p><span>Opção mista:</span> {{ resultado.combinacao_mista.combinacao_str }} ({{ resultado.combinacao_mista.As_final_cm2 }} cm²)</p>{% endif %}
+            </div>
+            {% endif %}
+
+            {% if resultado.calculo_id %}<a href="{% url 'gerar_relatorio_pdf' resultado.calculo_id %}" target="_blank" class="report-link report-link-inline"><i class="fa-solid fa-file-pdf"></i> Gerar relatório PDF</a>{% endif %}
+            {% endif %}
+        </section>
+        {% endif %}
         </div>
+
+        <aside class="engineering-sidebar-panel">
+            {% if not resultado %}
+            <section class="technical-card guidance-card"><div class="guidance-icon"><i class="fa-solid fa-building-columns"></i></div><h2>Pilar em flexão composta</h2><p>A aplicação considera a interação N-M, imperfeições geométricas e a verificação da esbelteza para determinar a armadura longitudinal.</p><ul class="guidance-list"><li><i class="fa-solid fa-check"></i> Comprimento efetivo automático ou manual</li><li><i class="fa-solid fa-check"></i> Momentos de extremidade opcionais</li><li><i class="fa-solid fa-check"></i> Efeitos de segunda ordem</li></ul></section>
+            {% endif %}
+
+            {% if resultado.status == 'Sucesso' and resultado.desenho_svg %}<section class="technical-card section-card"><div class="technical-card-heading compact"><div><span class="eyebrow">Secção e armaduras</span><h2>Representação gráfica</h2></div></div><div id="desenho-pilar-container" class="section-preview">{{ resultado.desenho_svg|safe }}</div></section>{% endif %}
+        </aside>
     </div>
 
-    <div class="form-group">
-        <label>Classe do Betão:</label>
-        <select name="f_ck" class="form-control">
-            <option value="20" {% if input_data.f_ck == '20' %}selected{% endif %}>C20/25</option>
-            <option value="25" {% if not input_data.f_ck or input_data.f_ck == '25' %}selected{% endif %}>C25/30</option>
-            <option value="30" {% if input_data.f_ck == '30' %}selected{% endif %}>C30/37</option>
-            <option value="35" {% if input_data.f_ck == '35' %}selected{% endif %}>C35/45</option>
-            <option value="40" {% if input_data.f_ck == '40' %}selected{% endif %}>C40/50</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label>Classe do Aço:</label>
-        <select name="f_yk" class="form-control">
-            <option value="400" {% if input_data.f_yk == '400' %}selected{% endif %}>A400</option>
-            <option value="500" {% if not input_data.f_yk or input_data.f_yk == '500' %}selected{% endif %}>A500</option>
-        </select>
-    </div>
-    <div class="form-group"><label>Esforço Axial (N_Ed) [kN]:</label><input type="number" step="any" name="N_Ed"
-            value="{{ input_data.N_Ed|default:'800' }}" required min="0.1"></div>
-    <div class="form-group"><label>Momento 1ª Ordem (M_Ed) [kNm]:</label><input type="number" step="0.1" name="M_Ed"
-            value="{{ input_data.M_Ed|default:'60' }}" required min="0"></div>
-    <div class="form-group"><label>Recobrimento (c_nom) [mm]:</label><input type="number" name="c_nom"
-            value="{{ input_data.c_nom|default:'35' }}" required min="1"></div>
-    <div class="form-group"><label>Coef. Fluência (φ_ef):</label><input type="number" step="0.1" name="phi_ef"
-            value="{{ input_data.phi_ef|default:'2.0' }}" required min="0"></div>
-
-    <div class="form-actions">
-        <button type="submit" class="btn-principal"><i class="fa-solid fa-calculator"></i> Calcular</button>
-        <button type="button" id="limparBtn" class="btn-secundario"><i class="fa-solid fa-eraser"></i> Limpar</button>
-    </div>
-</form>
-
-{% if resultado %}
-<div class="resultado {% if resultado.status == 'Sucesso' %}sucesso{% else %}erro{% endif %}">
-    <h3>Resultado Final:</h3>
-    <p><strong>{{ resultado.mensagem }}</strong></p>
-    {% if resultado.status == 'Sucesso' %}
-    <p style="font-size: 1.1rem; margin-bottom: 15px;">
-        <strong>Armadura Ótima a Adotar: {{ resultado.combinacao_final }} ({{ resultado.As_final_cm2 }} cm²)</strong>
-    </p>
-    <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
-    <p style="font-size: 0.9rem; color: #555;"><strong>Opções Consideradas:</strong></p>
-    {% if resultado.combinacao_mista %}
-    <p style="font-size: 0.9rem; margin: 5px 0;">• <strong>Opção Mista:</strong> {{ resultado.combinacao_mista.combinacao_str }} ({{ resultado.combinacao_mista.As_final_cm2 }} cm²)</p>
-    {% endif %}
-    {% if resultado.combinacao_unica %}
-    <p style="font-size: 0.9rem; margin: 5px 0;">• <strong>Opção Diâmetro Único:</strong> {{ resultado.combinacao_unica.combinacao_str }} ({{ resultado.combinacao_unica.As_final_cm2 }} cm²)</p>
-    {% endif %}
-    {% endif %}
+    {% if resultado.status == 'Sucesso' and resultado.graficos_materiais_svg %}<section class="technical-card full-width-card"><div class="technical-card-heading"><div><span class="eyebrow">Estado limite resistente</span><h2>Betão e aço</h2></div></div><div id="estado-limite-materiais-pilar-container" class="materials-visual">{{ resultado.graficos_materiais_svg|safe }}</div></section>{% endif %}
+    {% if resultado.status == 'Sucesso' and resultado.passos %}<section class="technical-card full-width-card calculation-card"><div class="technical-card-heading"><div><span class="eyebrow">Memória de cálculo</span><h2>Cálculo detalhado</h2></div><span class="standard-chip">Passo a passo</span></div><ol class="calculation-steps">{% for passo in resultado.passos %}<li><div class="step-index">{{ forloop.counter }}</div><div class="step-body"><strong>{{ passo.titulo }}</strong>{% if passo.formula %}<div class="formula-line">\( {{ passo.formula }} \)</div>{% endif %}<div class="calculation-line">{{ passo.calculo|safe }}</div></div></li>{% endfor %}</ol></section>{% endif %}
 </div>
-
-{% if resultado.status == 'Sucesso' %}
-<div class="form-actions" style="margin-top: 20px; justify-content: center;">
-    <a href="{% url 'gerar_relatorio_pdf' resultado.calculo_id %}" target="_blank" class="btn-secundario">
-        <i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF
-    </a>
-</div>
-
-    {% if resultado.desenho_svg %}
-    <div class="desenho-wrapper" style="margin-top: 30px;">
-        <h4>Representação Gráfica da Secção</h4>
-        <div id="desenho-pilar-container" style="max-width: 400px; margin: 20px auto 0;">
-            {{ resultado.desenho_svg|safe }}
-        </div>
-        <div style="text-align: center; margin-top: 15px;">
-            <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;"
-                onclick="exportarSVG('desenho-pilar-container', 'desenho_pilar.svg')"><i
-                    class="fa-solid fa-file-image"></i> Exportar SVG</button>
-        </div>
-    </div>
-    {% endif %}
-    {% if resultado.passos %}
-    <div class="passo-a-passo" style="margin-top: 20px;">
-        <h4>Cálculo Detalhado (Passo a Passo):</h4>
-        <ul>
-            {% for passo in resultado.passos %}
-            <li><strong>{{ passo.titulo }}</strong>
-                {% if passo.formula %}<div style="margin: 5px 0; color: #005a9c;">Fórmula: \( {{ passo.formula }} \)
-                </div>{% endif %}
-                <div style="margin-left: 10px; line-height: 1.8;">{{ passo.calculo|safe }}</div>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-{% endif %}
-{% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.querySelector('form');
-        const spinnerOverlay = document.getElementById('spinner-overlay');
-        if (form && spinnerOverlay) {
-            form.addEventListener('submit', function () {
-                spinnerOverlay.style.display = 'flex';
-            });
-        }
-
-        const radioGroups = document.querySelectorAll('.ligacao-options');
-        radioGroups.forEach(group => {
-            group.addEventListener('change', function (event) {
-                const labels = group.querySelectorAll('label');
-                labels.forEach(label => label.classList.remove('active'));
-                if (event.target.type === 'radio' && event.target.checked) {
-                    event.target.parentElement.classList.add('active');
-                }
-            });
-        });
-    });
-</script>
-<script>
-    function exportarSVG(containerId, filename) {
-        const container = document.getElementById(containerId);
-        if (!container) { console.error("Contentor do SVG não encontrado:", containerId); return; }
-        const svgElement = container.querySelector('svg');
-        if (!svgElement) { console.error("Elemento SVG não encontrado dentro de:", containerId); return; }
-        const serializer = new XMLSerializer();
-        let source = serializer.serializeToString(svgElement);
-        if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-            source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-        }
-        if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
-            source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-        }
-        const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    }
-</script>
-<script>
-    document.getElementById('limparBtn').addEventListener('click', function () {
-        const form = this.closest('form');
-        form.querySelector('input[name="b"]').value = '';
-        form.querySelector('input[name="h"]').value = '';
-        form.querySelector('input[name="l"]').value = '';
-        form.querySelector('input[name="N_Ed"]').value = '';
-        form.querySelector('input[name="M_Ed"]').value = '';
-        form.querySelector('input[name="c_nom"]').value = '';
-        form.querySelector('input[name="phi_ef"]').value = '';
-        const radios = form.querySelectorAll('.ligacao-options input[type="radio"]');
-        radios.forEach(radio => {
-            radio.checked = false;
-            radio.parentElement.classList.remove('active');
-        });
-        form.querySelector('input[name="lig_topo"][value="artic"]').checked = true;
-        form.querySelector('input[name="lig_topo"][value="artic"]').parentElement.classList.add('active');
-        form.querySelector('input[name="lig_base"][value="encab"]').checked = true;
-        form.querySelector('input[name="lig_base"][value="encab"]').parentElement.classList.add('active');
-
-        form.querySelector('select[name="f_ck"]').value = '25';
-        form.querySelector('select[name="f_yk"]').value = '500';
-    });
+document.addEventListener('DOMContentLoaded', function () {
+    const form=document.getElementById('form-pilar'), chkL0=document.getElementById('usar-l0-manual'), grupoL0=document.getElementById('grupo-l0-manual'), inputL0=document.getElementById('l0-manual'), inputL=document.getElementById('comprimento-real'), condLigacao=document.getElementById('cond-ligacao'), chkFluencia=document.getElementById('considerar-fluencia'), grupoFluencia=document.getElementById('grupo-fluencia'), inputPhi=document.getElementById('phi-ef'), chkMomentos=document.getElementById('usar-momentos-extremidade'), grupoMomentoSimples=document.getElementById('grupo-momento-simples'), grupoMomentosExtremidade=document.getElementById('grupo-momentos-extremidade'), inputMEd=document.getElementById('momento-ed'), inputM01=document.getElementById('momento-01'), inputM02=document.getElementById('momento-02');
+    function atualizarL0(){const ativo=chkL0&&chkL0.checked;if(grupoL0)grupoL0.style.display=ativo?'block':'none';if(inputL0){inputL0.required=ativo;inputL0.disabled=!ativo;}if(inputL){inputL.required=!ativo;inputL.disabled=ativo;}if(condLigacao)condLigacao.disabled=ativo;}
+    function atualizarFluencia(){const ativo=chkFluencia&&chkFluencia.checked;if(grupoFluencia)grupoFluencia.style.display=ativo?'block':'none';if(inputPhi){inputPhi.required=ativo;inputPhi.disabled=!ativo;}}
+    function atualizarMomentos(){const ativo=chkMomentos&&chkMomentos.checked;if(grupoMomentoSimples)grupoMomentoSimples.style.display=ativo?'none':'block';if(grupoMomentosExtremidade)grupoMomentosExtremidade.style.display=ativo?'block':'none';if(inputMEd){inputMEd.required=!ativo;inputMEd.disabled=ativo;}if(inputM01){inputM01.required=ativo;inputM01.disabled=!ativo;}if(inputM02){inputM02.required=ativo;inputM02.disabled=!ativo;}}
+    if(chkL0)chkL0.addEventListener('change',atualizarL0); if(chkFluencia)chkFluencia.addEventListener('change',atualizarFluencia); if(chkMomentos)chkMomentos.addEventListener('change',atualizarMomentos); atualizarL0();atualizarFluencia();atualizarMomentos();
+    const limpar=document.getElementById('limparBtn'); if(limpar&&form){limpar.addEventListener('click',function(){['b','h','l','N_Ed','M_Ed','M_01','M_02','c_nom','l0_manual'].forEach(function(nome){const campo=form.querySelector(`[name="${nome}"]`);if(campo)campo.value='';});const betao=form.querySelector('select[name="f_ck"]'),aco=form.querySelector('select[name="f_yk"]'),lig=form.querySelector('select[name="cond_ligacao"]');if(betao)betao.value='25';if(aco)aco.value='500';if(lig)lig.value='encab-artic';if(chkL0)chkL0.checked=false;if(chkFluencia)chkFluencia.checked=false;if(chkMomentos)chkMomentos.checked=false;if(inputPhi)inputPhi.value='0.87';atualizarL0();atualizarFluencia();atualizarMomentos();});}
+});
 </script>
 {% endblock %}

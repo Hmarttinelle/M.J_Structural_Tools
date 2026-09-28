@@ -4,119 +4,205 @@
 {% block title %}Detalhe do Cálculo - {{ calculo.elemento }}{% endblock %}
 
 {% block content %}
-    <div class="form-actions" style="margin-bottom: 20px; justify-content: space-between;">
-        <a href="{% url 'historico_calculos' %}" class="back-link" style="margin-bottom: 0;"><i class="fa-solid fa-arrow-left"></i> Voltar ao Histórico</a>
+
+
+<div class="detail-page engineering-page">
+    <div class="page-breadcrumb"><a href="{% url 'pagina_inicial' %}"><i class="fa-solid fa-house"></i> Menu Principal</a><i class="fa-solid fa-chevron-right"></i><a href="{% url 'historico_calculos' %}">Histórico</a><i class="fa-solid fa-chevron-right"></i><span>Detalhe</span></div>
+    <div class="detail-topbar">
+        <a href="{% url 'historico_calculos' %}" class="back-link" style="margin-bottom:0;">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Histórico
+        </a>
         <a href="{% url 'gerar_relatorio_pdf' calculo.id %}" class="btn-secundario" target="_blank">
-            <i class="fa-solid fa-file-pdf"></i> Exportar Relatório PDF
+            <i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF
         </a>
     </div>
 
-    <h1>Detalhe do Cálculo: {{ calculo.elemento }}</h1>
-    <p>Efetuado em: {{ calculo.timestamp|date:"d/m/Y H:i:s" }}</p>
-
-    <div class="resultado-detalhado" style="grid-template-columns: 1fr; gap: 30px;">
-        
-        <div class="passo-a-passo">
-            <h4>Dados de Entrada</h4>
-            <ul style="list-style: none; padding-left: 0;">
-                {% for item in calculo.input_data_formatado %}
-                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
-                    <strong>{{ item.label }} {% if item.symbol %}(\({{ item.symbol }}\)){% endif %}:</strong> 
-                    {{ item.value }} {{ item.unit }}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="resultado sucesso" style="margin-top: 0;">
-            <h3>Resultado Final:</h3>
-            <p><strong>{{ calculo.resultado_final.mensagem }}</strong></p>
-            {% if calculo.resultado_final.status == 'Sucesso' %}
-                {% if calculo.elemento == 'Viga' or calculo.elemento == 'Pilar' %}
-                    <p style="font-size: 1.2rem;">
-                        <strong>Armadura a adotar: {{ calculo.resultado_final.combinacao_final }} ({{ calculo.resultado_final.As_final_cm2 }} cm²)</strong>
-                    </p>
-                {% elif calculo.elemento == 'Sapata' %}
-                    <p><strong>Dimensões (A x B x H):</strong> {{ calculo.resultado_final.dimensoes }}</p>
-                    <p><strong>Armadura Inferior (Dir. X):</strong> {{ calculo.resultado_final.armadura_x }}</p>
-                    <p><strong>Armadura Inferior (Dir. Y):</strong> {{ calculo.resultado_final.armadura_y }}</p>
-                {% endif %}
-            {% endif %}
-        </div>
-        
-        {% if calculo.resultado_final.dados_desenho %}
-        <div class="desenhos-container" style="margin-top: 15px; text-align: center; page-break-inside: avoid;">
-            {% if calculo.elemento == 'Viga' or calculo.elemento == 'Pilar' %}
-            <div class="desenho-wrapper">
-                <h4>Representação Gráfica da Secção</h4>
-                <div id="desenho-container" style="max-width: 400px; margin: 20px auto 0;">
-                    {{ calculo.desenho_svg|safe }}
-                </div>
-                <div style="text-align: center; margin-top: 15px;">
-                    <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-container', 'desenho_{{ calculo.elemento|lower }}.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
-                </div>
-            </div>
-            {% elif calculo.elemento == 'Sapata' %}
-            <div class="desenho-box" style="display: inline-block; vertical-align: top; width: 100%; max-width: 450px; margin: 10px;">
-                <h4>Representação Gráfica (Planta)</h4>
-                <div id="desenho-sapata-planta">{{ calculo.desenho_planta_svg|safe }}</div>
-                <div style="text-align: center; margin-top: 10px;">
-                    <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-sapata-planta', 'desenho_sapata_planta.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
-                </div>
-            </div>
-            <div class="desenho-box" style="display: inline-block; vertical-align: top; width: 100%; max-width: 450px; margin: 10px;">
-                <h4>Representação Gráfica (Corte A-A)</h4>
-                <div id="desenho-sapata-corte">{{ calculo.desenho_corte_svg|safe }}</div>
-                <div style="text-align: center; margin-top: 10px;">
-                     <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-sapata-corte', 'desenho_sapata_corte.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        {% if calculo.resultado_final.passos %}
-        <div class="passo-a-passo">
-            <h4>Cálculo Detalhado (Passo a Passo):</h4>
-            <ul>
-                {% for passo in calculo.resultado_final.passos %}
-                    <li>
-                        <strong>{{ passo.titulo }}</strong>
-                        {% if passo.formula %}<div style="margin: 5px 0; color: #005a9c;">Fórmula: \( {{ passo.formula }} \)</div>{% endif %}
-                        <div style="margin-left: 10px; line-height: 1.8;">{{ passo.calculo|safe }}</div>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
+    <div class="detail-heading engineering-header detail-engineering-header">
+        <div class="engineering-header-icon"><i class="fa-solid fa-file-lines"></i></div>
+        <div><h1>Detalhe do Cálculo — {{ calculo.elemento }}</h1>
+        <p><i class="fa-regular fa-calendar"></i> {{ calculo.timestamp|date:"d/m/Y H:i:s" }} &nbsp; · &nbsp; Registo #{{ calculo.id }}</p></div>
     </div>
+
+    <section class="detail-card">
+        <div class="technical-card-heading compact"><div><span class="eyebrow">Dados de entrada</span><h2>Parâmetros do cálculo</h2></div><i class="fa-solid fa-keyboard card-heading-icon"></i></div>
+        <div class="input-grid">
+            {% for item in calculo.input_data_formatado %}
+                <div class="input-item">
+                    <span class="input-label">
+                        {{ item.label }}
+                        {% if item.symbol %}(\({{ item.symbol }}\)){% endif %}
+                    </span>
+                    <span class="input-value">{{ item.value }}{% if item.unit %} {{ item.unit }}{% endif %}</span>
+                </div>
+            {% empty %}
+                <p>Não existem dados de entrada formatados para este registo.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="detail-card result-box">
+        <div class="technical-card-heading compact"><div><span class="eyebrow">Resultado final</span><h2>Verificação e armadura</h2></div><i class="fa-solid fa-circle-check card-heading-icon success-icon"></i></div>
+        <p><strong>{{ calculo.resultado_final.mensagem }}</strong></p>
+
+        {% if calculo.resultado_final.status == 'Sucesso' %}
+            {% if calculo.elemento == 'Viga' %}
+                {% if calculo.resultado_final.tipo_secao == 'armadura_compressao' %}
+                    <div class="result-main">
+                        Tração: {{ calculo.resultado_final.combinacao_final }}
+                        ({{ calculo.resultado_final.As_final_cm2 }} cm²)
+                    </div>
+                    <div class="result-main">
+                        Compressão: {{ calculo.resultado_final.combinacao_compressao }}
+                        ({{ calculo.resultado_final.Asc_final_cm2 }} cm²)
+                    </div>
+                {% else %}
+                    <div class="result-main">
+                        Armadura de tração: {{ calculo.resultado_final.combinacao_final }}
+                        ({{ calculo.resultado_final.As_final_cm2 }} cm²)
+                    </div>
+                {% endif %}
+
+                <div class="result-grid">
+                    {% if calculo.resultado_final.M_Rd_kNm != None %}
+                    <div class="result-metric"><small>M<sub>Rd</sub></small>{{ calculo.resultado_final.M_Rd_kNm }} kNm</div>
+                    {% endif %}
+                    {% if calculo.resultado_final.xi_final != None %}
+                    <div class="result-metric"><small>x/d</small>{{ calculo.resultado_final.xi_final }}</div>
+                    {% endif %}
+                    {% if calculo.resultado_final.As_req_cm2 != None %}
+                    <div class="result-metric"><small>A<sub>s,req</sub></small>{{ calculo.resultado_final.As_req_cm2 }} cm²</div>
+                    {% endif %}
+                </div>
+
+            {% elif calculo.elemento == 'Pilar' %}
+                <div class="result-main">
+                    Armadura a adotar: {{ calculo.resultado_final.combinacao_final }}
+                    ({{ calculo.resultado_final.As_final_cm2 }} cm²)
+                </div>
+
+                <div class="result-grid">
+                    {% if calculo.resultado_final.l0_m != None %}
+                    <div class="result-metric"><small>l₀</small>{{ calculo.resultado_final.l0_m|floatformat:3 }} m</div>
+                    {% endif %}
+                    {% if calculo.resultado_final.classificacao %}
+                    <div class="result-metric"><small>Classificação</small>{{ calculo.resultado_final.classificacao }}</div>
+                    {% endif %}
+                    {% if calculo.resultado_final.lambda != None %}
+                    <div class="result-metric"><small>λ</small>{{ calculo.resultado_final.lambda|floatformat:2 }}</div>
+                    {% endif %}
+                    {% if calculo.resultado_final.lambda_lim != None %}
+                    <div class="result-metric"><small>λ<sub>lim</sub></small>{{ calculo.resultado_final.lambda_lim|floatformat:2 }}</div>
+                    {% endif %}
+
+                    {% if calculo.resultado_final.usar_momentos_extremidade %}
+                        <div class="result-metric"><small>M₀₁,an</small>{{ calculo.resultado_final.M_01_analise_kNm|floatformat:2 }} kNm</div>
+                        <div class="result-metric"><small>M₀₂,an</small>{{ calculo.resultado_final.M_02_analise_kNm|floatformat:2 }} kNm</div>
+                        <div class="result-metric"><small>M₀₁ com imperfeição</small>{{ calculo.resultado_final.M_01_kNm|floatformat:2 }} kNm</div>
+                        <div class="result-metric"><small>M₀₂ com imperfeição</small>{{ calculo.resultado_final.M_02_kNm|floatformat:2 }} kNm</div>
+                        <div class="result-metric"><small>rₘ (análise)</small>{{ calculo.resultado_final.r_m|floatformat:4 }}</div>
+                        <div class="result-metric"><small>C</small>{{ calculo.resultado_final.C_esbelteza|floatformat:4 }}</div>
+                        <div class="result-metric"><small>M₀e</small>{{ calculo.resultado_final.M0e_kNm|floatformat:2 }} kNm</div>
+                    {% elif calculo.resultado_final.M0_Ed_kNm != None %}
+                        <div class="result-metric"><small>M<sub>0Ed</sub></small>{{ calculo.resultado_final.M0_Ed_kNm|floatformat:2 }} kNm</div>
+                    {% endif %}
+
+                    {% if calculo.resultado_final.M2_kNm != None %}
+                    <div class="result-metric"><small>M₂</small>{{ calculo.resultado_final.M2_kNm|floatformat:2 }} kNm</div>
+                    {% endif %}
+                    {% if calculo.resultado_final.M_Ed_total_kNm != None %}
+                    <div class="result-metric"><small>M<sub>Ed,total</sub></small>{{ calculo.resultado_final.M_Ed_total_kNm|floatformat:2 }} kNm</div>
+                    {% endif %}
+                    {% if calculo.resultado_final.usar_momentos_extremidade and calculo.resultado_final.termo_momento_governante %}
+                    <div class="result-metric"><small>Termo governante</small>{{ calculo.resultado_final.termo_momento_governante }}</div>
+                    {% endif %}
+                    {% if calculo.resultado_final.M_Rd_kNm != None %}
+                    <div class="result-metric"><small>M<sub>Rd</sub></small>{{ calculo.resultado_final.M_Rd_kNm|floatformat:2 }} kNm</div>
+                    {% endif %}
+                    {% if calculo.resultado_final.N_Rd_kN != None %}
+                    <div class="result-metric"><small>N<sub>Rd</sub></small>{{ calculo.resultado_final.N_Rd_kN|floatformat:2 }} kN</div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endif %}
+    </section>
+
+    {% if calculo.desenho_svg %}
+    <section class="detail-card visual-container">
+        <div class="technical-card-heading compact"><div><span class="eyebrow">Secção</span><h2>Representação gráfica</h2></div></div>
+        <div id="desenho-container" class="section-svg">
+            {{ calculo.desenho_svg|safe }}
+        </div>
+        <div class="export-row">
+            <button type="button" class="btn-secundario"
+                    onclick="exportarSVG('desenho-container', 'desenho_{{ calculo.elemento|lower }}.svg')">
+                <i class="fa-solid fa-file-image"></i> Exportar SVG
+            </button>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if calculo.resultado_final.graficos_materiais_svg %}
+    <section class="detail-card visual-container">
+        <div class="technical-card-heading compact"><div><span class="eyebrow">Estado limite resistente</span><h2>Betão e aço</h2></div></div>
+        <div id="graficos-materiais-container" class="materials-svg">
+            {{ calculo.resultado_final.graficos_materiais_svg|safe }}
+        </div>
+        <div class="export-row">
+            <button type="button" class="btn-secundario"
+                    onclick="exportarSVG('graficos-materiais-container', 'estado_limite_{{ calculo.elemento|lower }}.svg')">
+                <i class="fa-solid fa-file-image"></i> Exportar SVG
+            </button>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if calculo.resultado_final.passos %}
+    <section class="detail-card">
+        <div class="technical-card-heading compact"><div><span class="eyebrow">Memória de cálculo</span><h2>Cálculo detalhado</h2></div></div>
+        <ul class="steps-list">
+            {% for passo in calculo.resultado_final.passos %}
+            <li>
+                <strong>{{ passo.titulo }}</strong>
+                {% if passo.formula %}
+                    <div class="formula-line">Fórmula: \( {{ passo.formula }} \)</div>
+                {% endif %}
+                <div class="calculation-line">{{ passo.calculo|safe }}</div>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        // Função para exportar SVG
-        function exportarSVG(containerId, filename) {
-            const container = document.getElementById(containerId);
-            if (!container) { console.error("Contentor do SVG não encontrado:", containerId); return; }
-            const svgElement = container.querySelector('svg');
-            if (!svgElement) { console.error("Elemento SVG não encontrado dentro de:", containerId); return; }
-            const serializer = new XMLSerializer();
-            let source = serializer.serializeToString(svgElement);
-            if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
-                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-            }
-            if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
-                source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-            }
-            const blob = new Blob([source], {type: "image/svg+xml;charset=utf-8"});
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
-    </script>
+<script>
+function exportarSVG(containerId, filename) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const svgElement = container.querySelector('svg');
+    if (!svgElement) return;
+
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svgElement);
+
+    if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    if (!source.match(/^<svg[^>]+"http:\/\/www\.w3\.org\/1999\/xlink"/)) {
+        source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+    }
+
+    const blob = new Blob([source], {type: "image/svg+xml;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
 {% endblock %}

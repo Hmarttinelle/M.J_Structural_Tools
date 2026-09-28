@@ -1,63 +1,58 @@
 {% extends "calculos/base.html" %}
 {% load static %}
-
 {% block title %}Histórico de Cálculos{% endblock %}
-
 {% block content %}
-    <a href="{% url 'pagina_inicial' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao Menu</a>
-    <h1>Histórico de Cálculos</h1>
+<div class="engineering-page history-page-modern">
+    <div class="page-breadcrumb"><a href="{% url 'pagina_inicial' %}"><i class="fa-solid fa-house"></i> Menu Principal</a><i class="fa-solid fa-chevron-right"></i><span>Histórico de Cálculos</span></div>
+    <header class="engineering-header history-header-modern"><div class="engineering-header-icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div><h1>Histórico de Cálculos</h1><p>Consulte e organize os dimensionamentos guardados na aplicação.</p></div></header>
 
     {% if calculos %}
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Elemento</th>
-                        <th>Data</th>
-                        <th>Dados de Entrada (Resumo)</th>
-                        <th>Resultado</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
+    <section class="technical-card history-card-modern">
+        <div class="history-toolbar-modern">
+            <div class="history-filters" role="group" aria-label="Filtrar por elemento">
+                <button type="button" class="history-filter active" data-filter="all">Todos</button>
+                <button type="button" class="history-filter" data-filter="Viga">Vigas</button>
+                <button type="button" class="history-filter" data-filter="Pilar">Pilares</button>
+            </div>
+            <div class="history-search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="history-search" placeholder="Pesquisar cálculos..." aria-label="Pesquisar cálculos"></div>
+            <button type="button" id="bulk-delete" class="bulk-delete-btn" disabled><i class="fa-solid fa-trash-can"></i> Eliminar <span id="selected-count">0</span></button>
+        </div>
+        <form id="csrf-helper" style="display:none;">{% csrf_token %}</form>
+        <div class="history-table-wrap">
+            <table class="history-table modern-table">
+                <thead><tr><th class="check-col"><input type="checkbox" id="select-all" class="history-check" aria-label="Selecionar todos"></th><th>Tipo</th><th>Data e hora</th><th>Dimensões / dados principais</th><th>Resultado</th><th>Ações</th></tr></thead>
                 <tbody>
                     {% for calculo in calculos %}
-                    <tr>
-                        <td><strong>{{ calculo.elemento }}</strong></td>
-                        <td>{{ calculo.timestamp|date:"d/m/Y H:i" }}</td>
-                        <td class="input-details">
-                            {% if calculo.elemento == 'Viga' %}
-                                <strong>M_Ed:</strong> {{ calculo.input_data.M_Ed.0 }} kNm
-                            {% elif calculo.elemento == 'Pilar' %}
-                                <strong>N_Ed:</strong> {{ calculo.input_data.N_Ed.0 }} kN<br>
-                                <strong>M_Ed:</strong> {{ calculo.input_data.M_Ed.0 }} kNm
-                            {% elif calculo.elemento == 'Sapata' %}
-                                <strong>N_Ed:</strong> {{ calculo.input_data.N_Ed.0 }} kN
-                            {% endif %}
-                        </td>
-                        <td class="result-details">
-                            {% if calculo.resultado_final.combinacao_final %}
-                                <strong>{{ calculo.resultado_final.combinacao_final }}</strong>
-                            {% elif calculo.resultado_final.dimensoes %}
-                                <strong>{{ calculo.resultado_final.dimensoes }}</strong>
-                            {% endif %}
-                        </td>
-                        <td style="display: flex; gap: 10px; align-items: center;">
-                            <a href="{% url 'historico_detalhe' calculo.id %}" class="btn-secundario" style="padding: 8px 12px; font-size: 0.9rem;" title="Ver Detalhes">
-                                <i class="fa-solid fa-magnifying-glass-plus"></i> Detalhes
-                            </a>
-                            <form action="{% url 'historico_delete' calculo.id %}" method="post" onsubmit="return confirm('Tem a certeza de que deseja eliminar este registo?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-secundario" style="padding: 8px 12px; font-size: 0.9rem; background-color: #f8d7da; border-color: #f5c2c7; color: #842029;" title="Eliminar">
-                                    <i class="fa-solid fa-trash-can"></i> Eliminar
-                                </button>
-                            </form>
-                        </td>
+                    <tr class="history-row" data-element="{{ calculo.elemento }}" data-search="{{ calculo.elemento }} {{ calculo.timestamp|date:'d/m/Y H:i' }} {{ calculo.input_data.b }} {{ calculo.input_data.h }} {{ calculo.input_data.M_Ed }} {{ calculo.input_data.N_Ed }} {{ calculo.resultado_final.combinacao_final }}">
+                        <td><input type="checkbox" class="history-check row-check" value="{{ calculo.id }}" data-delete-url="{% url 'historico_delete' calculo.id %}" aria-label="Selecionar cálculo {{ calculo.id }}"></td>
+                        <td>{% if calculo.elemento == 'Viga' %}<span class="element-badge badge-viga"><i class="fa-solid fa-grip-lines"></i> Viga</span>{% elif calculo.elemento == 'Pilar' %}<span class="element-badge badge-pilar"><i class="fa-solid fa-i-cursor"></i> Pilar</span>{% endif %}</td>
+                        <td class="date-cell"><strong>{{ calculo.timestamp|date:"d/m/Y" }}</strong><small>{{ calculo.timestamp|date:"H:i" }}</small></td>
+                        <td><div class="history-primary-data">{% if calculo.input_data.b and calculo.input_data.h %}<strong>{{ calculo.input_data.b }} × {{ calculo.input_data.h }} mm</strong>{% endif %}{% if calculo.elemento == 'Viga' %}<span>M<sub>Ed</sub> = {{ calculo.input_data.M_Ed }} kNm</span>{% elif calculo.elemento == 'Pilar' %}<span>N<sub>Ed</sub> = {{ calculo.input_data.N_Ed }} kN{% if calculo.input_data.M_Ed %} · M<sub>Ed</sub> = {{ calculo.input_data.M_Ed }} kNm{% endif %}</span>{% endif %}</div></td>
+                        <td>{% if calculo.resultado_final.combinacao_final %}<div class="history-result"><strong>{{ calculo.resultado_final.combinacao_final }}</strong>{% if calculo.resultado_final.As_final_cm2 %}<span>A<sub>s</sub> = {{ calculo.resultado_final.As_final_cm2 }} cm²</span>{% endif %}</div>{% else %}<span>—</span>{% endif %}</td>
+                        <td class="history-actions"><a href="{% url 'historico_detalhe' calculo.id %}" class="icon-action" title="Ver detalhes"><i class="fa-regular fa-eye"></i></a><a href="{% url 'gerar_relatorio_pdf' calculo.id %}" target="_blank" class="icon-action pdf" title="Gerar PDF"><i class="fa-regular fa-file-pdf"></i></a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        <div class="history-footer"><span id="history-count">A mostrar {{ calculos|length }} registo{{ calculos|length|pluralize }}</span></div>
+    </section>
     {% else %}
-        <p class="no-history">Ainda não foi efetuado nenhum cálculo.</p>
+    <section class="technical-card empty-state"><div class="guidance-icon"><i class="fa-regular fa-folder-open"></i></div><h2>Sem cálculos guardados</h2><p>Os dimensionamentos efetuados em Viga ou Pilar aparecerão aqui automaticamente.</p><a href="{% url 'pagina_inicial' %}" class="btn-principal">Voltar ao menu principal</a></section>
     {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+ const selectAll=document.getElementById('select-all'),checks=Array.from(document.querySelectorAll('.row-check')),bulkBtn=document.getElementById('bulk-delete'),countEl=document.getElementById('selected-count'),rows=Array.from(document.querySelectorAll('.history-row')),filters=Array.from(document.querySelectorAll('.history-filter')),search=document.getElementById('history-search'),historyCount=document.getElementById('history-count');
+ let activeFilter='all';
+ function refreshSelection(){if(!bulkBtn)return;const selected=checks.filter(c=>c.checked&&c.closest('tr').style.display!=='none');if(countEl)countEl.textContent=selected.length;bulkBtn.disabled=selected.length===0;if(selectAll){const visible=checks.filter(c=>c.closest('tr').style.display!=='none');selectAll.checked=visible.length>0&&visible.every(c=>c.checked);selectAll.indeterminate=visible.some(c=>c.checked)&&!visible.every(c=>c.checked);}}
+ function applyFilters(){const q=(search?.value||'').toLowerCase().trim();let visible=0;rows.forEach(row=>{const okType=activeFilter==='all'||row.dataset.element===activeFilter;const okSearch=!q||(row.dataset.search||'').toLowerCase().includes(q);const show=okType&&okSearch;row.style.display=show?'':'none';if(show)visible++;});if(historyCount)historyCount.textContent=`A mostrar ${visible} registo${visible===1?'':'s'}`;refreshSelection();}
+ filters.forEach(btn=>btn.addEventListener('click',()=>{filters.forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeFilter=btn.dataset.filter;applyFilters();})); if(search)search.addEventListener('input',applyFilters); checks.forEach(c=>c.addEventListener('change',refreshSelection)); if(selectAll)selectAll.addEventListener('change',()=>{checks.filter(c=>c.closest('tr').style.display!=='none').forEach(c=>c.checked=selectAll.checked);refreshSelection();});
+ if(bulkBtn)bulkBtn.addEventListener('click',async function(){const selected=checks.filter(c=>c.checked&&c.closest('tr').style.display!=='none');if(!selected.length||!confirm(`Eliminar ${selected.length} registo(s) selecionado(s)?`))return;const csrf=document.querySelector('#csrf-helper input[name="csrfmiddlewaretoken"]')?.value;bulkBtn.disabled=true;try{for(const checkbox of selected){const response=await fetch(checkbox.dataset.deleteUrl,{method:'POST',headers:csrf?{'X-CSRFToken':csrf}:{},credentials:'same-origin'});if(!response.ok)throw new Error('Falha ao eliminar um dos registos.');}window.location.reload();}catch(error){alert(error.message||'Não foi possível eliminar os registos selecionados.');refreshSelection();}});
+ applyFilters();
+})();
+</script>
 {% endblock %}

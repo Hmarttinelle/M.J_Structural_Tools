@@ -4,18 +4,169 @@
 {% block title %}Configurar Sistema{% endblock %}
 
 {% block content %}
-    <a href="{% url 'pagina_inicial' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao Menu</a>
-    <h1><i class="fa-solid fa-gears"></i> Configurar Sistema</h1>
-    <p>Altere as definições globais de aparência da aplicação.</p>
+<style>
+    .config-page { max-width: 1050px; margin: 0 auto; }
+    .config-heading { text-align:center; margin: 28px 0 34px; }
+    .config-heading h1 {
+        display:flex; justify-content:center; align-items:center; gap:10px;
+        margin-bottom:8px;
+    }
+    .config-heading p { margin:0; color:#6c757d; }
+    .config-grid {
+        display:grid; grid-template-columns: 1fr 1fr; gap:24px;
+        align-items:stretch;
+    }
+    .config-card {
+        border:1px solid rgba(0,0,0,.12); border-radius:8px;
+        padding:20px; background:rgba(255,255,255,.72);
+    }
+    .config-card-wide { grid-column:1 / -1; }
+    .sidebar-image-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,360px); gap:24px; align-items:center; }
+    .sidebar-preview-frame { background:linear-gradient(180deg,var(--app-sidebar-start,#061c34),var(--app-sidebar-end,#041729)); border-radius:10px; padding:16px; min-height:170px; display:flex; align-items:center; justify-content:center; }
+    .sidebar-preview-frame .image-preview { max-height:155px; border:0; background:transparent; }
+    .config-card.accent { border-color:var(--primary-color,#4baf89); }
+    .config-card-title {
+        display:flex; align-items:center; gap:8px;
+        font-weight:700; font-size:1.05rem;
+        color:var(--primary-color,#4baf89);
+        padding-bottom:12px; margin-bottom:18px;
+        border-bottom:1px solid rgba(0,0,0,.08);
+    }
+    .config-label { display:block; font-weight:700; margin:16px 0 10px; }
+    .theme-selector {
+        display:flex; gap:28px; align-items:stretch; flex-wrap:wrap;
+    }
+    .theme-option { position:relative; }
+    .theme-option input { position:absolute; opacity:0; pointer-events:none; }
+    .theme-option label {
+        width:88px; min-height:78px; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:8px;
+        border:1px solid rgba(0,0,0,.14); border-radius:6px;
+        background:rgba(255,255,255,.65); cursor:pointer;
+        transition:.15s ease;
+    }
+    .theme-option label i { font-size:1.35rem; }
+    .theme-option input:checked + label {
+        border:2px solid var(--primary-color,#4baf89);
+        color:var(--primary-color,#4baf89);
+        background:rgba(75,175,137,.06);
+    }
+    .color-row { display:flex; align-items:center; gap:12px; }
+    .color-row input[type="color"] {
+        width:44px; height:44px; padding:0; border:0; border-radius:50%;
+        overflow:hidden; background:transparent; cursor:pointer;
+    }
+    .color-row input[type="text"] {
+        max-width:130px; padding:10px 12px; border:1px solid rgba(0,0,0,.14);
+        border-radius:6px;
+    }
+    #color-code {
+        min-width:92px; padding:9px 11px; border:1px solid rgba(0,0,0,.12);
+        border-radius:6px; background:rgba(255,255,255,.7); font-family:monospace;
+    }
+    .upload-zone {
+        position:relative; min-height:126px;
+        border:2px dashed var(--primary-color,#4baf89);
+        border-radius:6px; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:8px;
+        text-align:center; padding:18px; cursor:pointer;
+        background:rgba(255,255,255,.45);
+    }
+    .upload-zone i { font-size:1.7rem; color:var(--primary-color,#4baf89); }
+    .native-background-widget {
+        position:absolute; inset:0; opacity:0; overflow:hidden; cursor:pointer;
+    }
+    .native-background-widget input[type="file"] {
+        position:absolute; inset:0; width:100%; height:100%;
+        cursor:pointer; opacity:0;
+    }
+    .sidebar-native-file-input {
+        position:absolute !important;
+        inset:0 !important;
+        width:100% !important;
+        height:100% !important;
+        margin:0 !important;
+        padding:0 !important;
+        border:0 !important;
+        opacity:0 !important;
+        cursor:pointer !important;
+        z-index:20 !important;
+    }
+    .sidebar-upload-zone > i,
+    .sidebar-upload-zone > strong,
+    .sidebar-upload-zone > span {
+        pointer-events:none;
+    }
+    .file-input-visually-hidden {
+        position:absolute !important;
+        width:1px !important;
+        height:1px !important;
+        padding:0 !important;
+        margin:-1px !important;
+        overflow:hidden !important;
+        clip:rect(0,0,0,0) !important;
+        white-space:nowrap !important;
+        border:0 !important;
+        opacity:0 !important;
+        pointer-events:none !important;
+    }
+    .file-input-visually-hidden input[type="file"] {
+        width:1px !important;
+        height:1px !important;
+        opacity:0 !important;
+        pointer-events:none !important;
+    }
+    .upload-zone:focus-visible {
+        outline:3px solid color-mix(in srgb, var(--primary-color,#4baf89) 42%, white);
+        outline-offset:3px;
+    }
+    .upload-zone .selected-file-name {
+        display:none;
+        max-width:100%;
+        font-size:.82rem;
+        color:#425466;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+    }
+    .preview-box { margin-top:14px; text-align:center; }
+    .image-preview {
+        display:block; max-width:310px; width:100%; max-height:190px;
+        object-fit:cover; border-radius:5px; margin:0 auto;
+        border:1px solid rgba(0,0,0,.12);
+    }
+    .remove-row {
+        margin-top:12px; display:flex; align-items:center;
+        justify-content:center; gap:7px; font-size:.88rem;
+    }
+    .save-row { margin-top:26px; }
+    .save-row .btn-principal { min-width:270px; }
+    .form-error { color:#a1262e; margin-top:8px; font-size:.9rem; }
+    @media (max-width: 780px) {
+        .config-grid { grid-template-columns:1fr; }
+        .config-card-wide { grid-column:auto; }
+        .sidebar-image-layout { grid-template-columns:1fr; }
+        .save-row .btn-principal { width:100%; min-width:0; }
+    }
+</style>
+
+<div class="config-page engineering-page">
+    <div class="page-breadcrumb"><a href="{% url 'pagina_inicial' %}"><i class="fa-solid fa-house"></i> Menu Principal</a><i class="fa-solid fa-chevron-right"></i><span>Configurações</span></div>
+    <header class="engineering-header config-engineering-header">
+        <div class="engineering-header-icon"><i class="fa-solid fa-gear"></i></div>
+        <div><h1>Configurações</h1><p>Personalize a aparência e o comportamento visual da aplicação.</p></div>
+    </header>
 
     <form method="post" enctype="multipart/form-data" class="config-form">
         {% csrf_token %}
-        
-        <fieldset class="form-section">
-            <legend>Aparência Visual</legend>
 
-            <div class="form-group">
-                <label>{{ form.theme_mode.label }}</label>
+        <div class="config-grid">
+            <section class="config-card">
+                <div class="config-card-title">
+                    <i class="fa-solid fa-palette"></i> Aparência Visual
+                </div>
+
+                <span class="config-label">Modo do Tema</span>
                 <div class="theme-selector">
                     {% for radio in form.theme_mode %}
                     <div class="theme-option">
@@ -26,98 +177,197 @@
                             {% else %}
                                 <i class="fa-solid fa-moon"></i>
                             {% endif %}
-                            {{ radio.choice_label }}
+                            <span>{{ radio.choice_label }}</span>
                         </label>
                     </div>
                     {% endfor %}
                 </div>
+
                 {% if form.theme_mode.errors %}
-                    <div class="form-error">
-                        {% for error in form.theme_mode.errors %}{{ error }}{% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                <label for="{{ form.primary_color.id_for_label }}">{{ form.primary_color.label }}</label>
-                <div class="color-picker-wrapper">
-                    {{ form.primary_color }}
-                    <span id="color-preview" style="background-color: {{ form.primary_color.value|default:'#0d6efd' }};"></span>
+                <div class="form-error">
+                    {% for error in form.theme_mode.errors %}{{ error }}{% endfor %}
                 </div>
-                 {% if form.primary_color.errors %}
-                    <div class="form-error">
-                        {% for error in form.primary_color.errors %}{{ error }}{% endfor %}
-                    </div>
                 {% endif %}
-            </div>
-        </fieldset>
 
-        <fieldset class="form-section">
-            <legend>Imagem de Fundo</legend>
-            <div class="form-group">
-                <label for="{{ form.background_image.id_for_label }}">{{ form.background_image.label }}</label>
-                {{ form.background_image }}
-                
-                <div class="image-preview-container" id="image-preview-container">
+                <span class="config-label">Cor Principal da Interface</span>
+                <div class="color-row">
+                    {{ form.primary_color }}
+                    <span id="color-code">{{ form.primary_color.value|default:'#0d6efd' }}</span>
+                </div>
+
+                {% if form.primary_color.errors %}
+                <div class="form-error">
+                    {% for error in form.primary_color.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="config-card accent">
+                <div class="config-card-title">
+                    <i class="fa-solid fa-image"></i> Imagem de Fundo
+                </div>
+
+                <label class="upload-zone" for="{{ form.background_image.id_for_label }}">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <strong>Clique ou arraste uma imagem para alterar</strong>
+                    <span style="font-size:.84rem;color:#6c757d;">A nova imagem será pré-visualizada antes de guardar.</span>
+                    <span class="native-background-widget">{{ form.background_image }}</span>
+                </label>
+
+                <div class="preview-box" id="image-preview-container">
                     {% if form.instance.background_image %}
-                        <p class="current-image-info">Imagem atual:</p>
-                        <img src="{{ form.instance.background_image.url }}" alt="Imagem de fundo atual" class="image-preview">
+                        <img src="{{ form.instance.background_image.url }}"
+                             alt="Imagem de fundo atual"
+                             class="image-preview"
+                             id="background-preview">
                     {% else %}
-                         <p class="current-image-info">Sem imagem de fundo definida.</p>
-                         <img src="" alt="Pré-visualização da nova imagem" class="image-preview" style="display: none;">
+                        <img src=""
+                             alt="Pré-visualização da nova imagem"
+                             class="image-preview"
+                             id="background-preview"
+                             style="display:none;">
+                        <p id="no-background-message" style="color:#6c757d;">Sem imagem de fundo definida.</p>
                     {% endif %}
                 </div>
-                
-                {% if form.background_image.errors %}
-                    <div class="form-error">
-                        {% for error in form.background_image.errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-        </fieldset>
 
-        <div class="form-actions">
-            <button type="submit" class="btn-principal"><i class="fa-solid fa-save"></i> Guardar Alterações</button>
+                {% if form.instance.background_image %}
+                <label class="remove-row">
+                    <input type="checkbox" name="background_image-clear" value="on">
+                    <i class="fa-solid fa-trash-can" style="color:#a1262e;"></i>
+                    Remover Imagem de Fundo
+                </label>
+                {% endif %}
+
+                {% if form.background_image.errors %}
+                <div class="form-error">
+                    {% for error in form.background_image.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="config-card accent config-card-wide">
+                <div class="config-card-title">
+                    <i class="fa-solid fa-panorama"></i> Imagem da Barra Lateral
+                </div>
+
+                <div class="sidebar-image-layout">
+                    <div>
+                        <label class="upload-zone sidebar-upload-zone" for="id_sidebar_image">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <strong>Clique para escolher uma imagem para a barra lateral</strong>
+                            <span style="font-size:.84rem;color:#6c757d;">PNG, JPG ou WebP, de preferência com fundo transparente.</span>
+                            <span class="selected-file-name" id="sidebar-selected-file"></span>
+
+                            <!-- Campo nativo explícito. Não depende de {{ form.sidebar_image }} para receber o clique. -->
+                            <input
+                                type="file"
+                                name="sidebar_image"
+                                id="id_sidebar_image"
+                                accept="image/png,image/jpeg,image/webp"
+                                class="sidebar-native-file-input"
+                            >
+                        </label>
+
+                        {% if form.instance.sidebar_image %}
+                        <label class="remove-row">
+                            <input type="checkbox" name="sidebar_image-clear" value="on">
+                            <i class="fa-solid fa-trash-can" style="color:#a1262e;"></i>
+                            Remover Imagem da Barra Lateral
+                        </label>
+                        {% endif %}
+
+                        {% if form.sidebar_image.errors %}
+                        <div class="form-error">
+                            {% for error in form.sidebar_image.errors %}{{ error }}{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="sidebar-preview-frame">
+                        {% if form.instance.sidebar_image %}
+                            <img src="{{ form.instance.sidebar_image.url }}"
+                                 alt="Imagem atual da barra lateral"
+                                 class="image-preview"
+                                 id="sidebar-preview">
+                        {% else %}
+                            <img src=""
+                                 alt="Pré-visualização da imagem da barra lateral"
+                                 class="image-preview"
+                                 id="sidebar-preview"
+                                 style="display:none;">
+                            <p id="no-sidebar-message" style="color:#c8d8e8;margin:0;text-align:center;">Será utilizado o desenho estrutural padrão.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="save-row">
+            <button type="submit" class="btn-principal">
+                <i class="fa-solid fa-check"></i> Guardar Configurações
+            </button>
         </div>
     </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Script para a pré-visualização da cor
-        const colorInput = document.getElementById('{{ form.primary_color.id_for_label }}');
-        const colorPreview = document.getElementById('color-preview');
-        if (colorInput && colorPreview) {
-            colorInput.addEventListener('input', function() {
-                colorPreview.style.backgroundColor = this.value;
-            });
-        }
+(function () {
+    const colorInput = document.getElementById('{{ form.primary_color.id_for_label }}');
+    const colorCode = document.getElementById('color-code');
 
-        // Script para a pré-visualização da imagem de fundo
-        const imageInput = document.getElementById('{{ form.background_image.id_for_label }}');
-        const imagePreviewContainer = document.getElementById('image-preview-container');
-        const imagePreview = imagePreviewContainer.querySelector('.image-preview');
-        const currentImageInfo = imagePreviewContainer.querySelector('.current-image-info');
+    if (colorInput && colorCode) {
+        const syncColor = () => {
+            colorCode.textContent = colorInput.value || '';
+            if (colorInput.value) {
+                document.documentElement.style.setProperty('--primary-color', colorInput.value);
+            }
+        };
+        colorInput.addEventListener('input', syncColor);
+        syncColor();
+    }
 
-        if (imageInput && imagePreview) {
-            imageInput.addEventListener('change', function(event) {
-                const file = event.target.files[0];
+    function ligarPreview(inputId, previewId, emptyMessageId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        const emptyMessage = document.getElementById(emptyMessageId);
+        if (!input || !preview) return;
+
+        input.addEventListener('change', function () {
+            const file = this.files && this.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                preview.src = event.target.result;
+                preview.style.display = 'block';
+                if (emptyMessage) emptyMessage.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    ligarPreview('{{ form.background_image.id_for_label }}', 'background-preview', 'no-background-message');
+    ligarPreview('id_sidebar_image', 'sidebar-preview', 'no-sidebar-message');
+
+    const sidebarInput = document.getElementById('id_sidebar_image');
+    const sidebarFileName = document.getElementById('sidebar-selected-file');
+
+    if (sidebarInput) {
+        sidebarInput.addEventListener('change', function () {
+            const file = this.files && this.files[0];
+            if (sidebarFileName) {
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        imagePreview.src = e.target.result;
-                        imagePreview.style.display = 'block';
-                        if (currentImageInfo) {
-                           currentImageInfo.textContent = 'Nova imagem:';
-                        }
-                    }
-                    reader.readAsDataURL(file);
+                    sidebarFileName.textContent = file.name;
+                    sidebarFileName.style.display = 'block';
+                } else {
+                    sidebarFileName.textContent = '';
+                    sidebarFileName.style.display = 'none';
                 }
-            });
-        }
-    });
+            }
+        });
+    }
+})();
 </script>
 {% endblock %}

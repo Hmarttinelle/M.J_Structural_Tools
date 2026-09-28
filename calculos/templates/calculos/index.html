@@ -2,48 +2,110 @@
 {% load static %}
 
 {% block title %}Menu Principal - M.J. Structural Tools{% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block container_class %}home-container{% endblock %}
 
 {% block content %}
-<div class="header-logo">
-    <h1 style="font-size: 3rem; margin-bottom: 0;">M.J. Structural Tools</h1>
-    <p style="font-size: 2rem; color: #666; margin-top: 5px;">Ferramenta de Dimensionamento dos Elementos Estruturais</p>
-</div>
-<p>Selecione o tipo de elemento que pretende dimensionar:</p>
+<div class="home-content">
+            <section class="home-hero">
+                <div class="home-hero-inner">
+                    <h1>M.J. Structural Tools</h1>
+                    <h2>Ferramenta de Dimensionamento dos Elementos Estruturais</h2>
+                    <span class="home-hero-divider" aria-hidden="true"></span>
+                    <p>Aplicação para o dimensionamento de elementos em betão armado com base nas Normas Europeias (Eurocódigos).</p>
+                </div>
+            </section>
 
-<a href="{% url 'viga_dimensionamento' %}" class="nav-card">
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
-        <rect x="2" y="10" width="20" height="4" fill="currentColor" stroke="none" />
-        <polygon points="5,14 2,19 8,19" fill="none" />
-        <polygon points="19,14 16,19 22,19" fill="none" />
-        <line x1="1" y1="19" x2="23" y2="19" />
-    </svg>
-    Dimensionar Viga
-</a>
-<a href="{% url 'pilar_dimensionamento' %}" class="nav-card">
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
-        <rect x="9" y="3" width="6" height="18" fill="currentColor" stroke="none"/>
-        <line x1="6" y1="21" x2="18" y2="21" stroke-width="3" />
-        <line x1="7" y1="3" x2="17" y2="3" stroke-width="3" />
-    </svg>
-    Dimensionar Pilar
-</a>
-<a href="{% url 'sapata_dimensionamento' %}" class="nav-card">
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
-        <rect x="10" y="3" width="4" height="10" fill="currentColor" stroke="none" />
-        <polygon points="10,13 4,21 20,21 14,13" fill="none" />
-        <line x1="2" y1="21" x2="22" y2="21" stroke-width="2" />
-    </svg>
-    Dimensionar Sapata
-</a>
-<a href="{% url 'historico_calculos' %}" class="nav-card">
-    <i class="fa-solid fa-clock-rotate-left"></i> Ver Histórico
-</a>
-<a href="{% url 'configuracao_sistema' %}" class="nav-card">
-    <i class="fa-solid fa-gears"></i> Configurar Sistema
-</a>
+            <section class="home-modules" aria-label="Módulos da aplicação">
+                <article class="home-module-card home-module-beam">
+                    <div class="home-module-visual" aria-hidden="true">
+                        <img src="{% static 'calculos/viga.jpg' %}" alt="Viga" style="width: 100%; height: 210px; object-fit: cover;">
+                    </div>
+                    <div class="home-module-icon home-module-icon-green">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="4" rx="1"/><path d="M6 13 3.5 18h5L6 13Zm12 0L15.5 18h5L18 13Z"/><path d="M2 19h20"/></svg>
+                    </div>
+                    <div class="home-module-body">
+                        <h3>Dimensionar Viga</h3>
+                        <p>Dimensionamento de vigas em betão armado à flexão simples, com verificações ao Estado Limite Último, de acordo com o Eurocódigo 2 (EN 1992-1-1).</p>
+                        <a href="{% url 'viga_dimensionamento' %}" class="home-module-action action-green">
+                            <i class="fa-solid fa-arrow-right"></i>
+                            <span>Aceder ao Dimensionamento</span>
+                        </a>
+                    </div>
+                </article>
 
-<footer>
-    <p>Desenvolvido por Helder Silva, {% now "Y" %}</p>
-    <p style="font-size: 0.9em; margin-top: 5px;">Email: <a href="mailto:helder.marttinelle@mail.ru" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">helder.marttinelle@mail.ru</a></p>
-</footer>
+                <article class="home-module-card home-module-column">
+                    <div class="home-module-visual" aria-hidden="true">
+                        <img src="{% static 'calculos/pilar.jpg' %}" alt="Pilar" style="width: 100%; height: 210px; object-fit: cover;">
+                    </div>
+                    <div class="home-module-icon home-module-icon-blue">
+                        <svg viewBox="0 0 24 24"><path d="M9 3h6v18H9z"/><path d="M6 3h12M6 21h12"/></svg>
+                    </div>
+                    <div class="home-module-body">
+                        <h3>Dimensionar Pilar</h3>
+                        <p>Dimensionamento de pilares em betão armado, incluindo verificação à esbelteza, de acordo com o Eurocódigo 2 (EN 1992-1-1).</p>
+                        <a href="{% url 'pilar_dimensionamento' %}" class="home-module-action action-blue">
+                            <i class="fa-solid fa-arrow-right"></i>
+                            <span>Aceder ao Dimensionamento</span>
+                        </a>
+                    </div>
+                </article>
+
+                <article class="home-module-card home-module-footing is-unavailable">
+                    <div class="home-module-visual" aria-hidden="true">
+                        <img src="{% static 'calculos/sapata.jpg' %}" alt="Sapata" style="width: 100%; height: 210px; object-fit: cover;">
+                    </div>
+                    <div class="home-module-icon home-module-icon-muted">
+                        <svg viewBox="0 0 24 24"><path d="M10 3h4v9h-4z"/><path d="m10 12-6 8h16l-6-8z"/><path d="M2 21h20"/></svg>
+                    </div>
+                    <div class="home-module-body">
+                        <div class="home-module-title-row">
+                            <h3>Sapata</h3>
+                            <span class="home-status-badge">Em desenvolvimento</span>
+                        </div>
+                        <p>O dimensionamento de sapatas não se encontra disponível nesta versão da aplicação. Esta funcionalidade poderá ser integrada numa versão futura.</p>
+                        <a href="{% url 'sapata_modulo' %}" class="home-module-action action-disabled" title="Abrir informação sobre este módulo">
+                            <i class="fa-solid fa-lock"></i>
+                            <span>Módulo não disponível</span>
+                        </a>
+                    </div>
+                </article>
+            </section>
+
+            <section class="home-info-strip" id="sobre" aria-label="Informação da aplicação">
+                <div class="home-info-item">
+                    <span class="home-info-icon"><i class="fa-regular fa-file-lines"></i></span>
+                    <div>
+                        <h4>Normas de Referência</h4>
+                        <p>EN 1990<br>EN 1992-1-1<br>EN 1992-1-2</p>
+                    </div>
+                </div>
+                <div class="home-info-item">
+                    <span class="home-info-icon"><i class="fa-solid fa-gears"></i></span>
+                    <div>
+                        <h4>Funcionalidades</h4>
+                        <p>Cálculo automático<br>Verificações normativas<br>Relatórios PDF<br>Representação gráfica</p>
+                    </div>
+                </div>
+                <div class="home-info-item">
+                    <span class="home-info-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                    <div>
+                        <h4>Objetivo</h4>
+                        <p>Apoiar o projeto e estudo de elementos estruturais em betão armado, com base em métodos europeus e rigor técnico.</p>
+                    </div>
+                </div>
+                <div class="home-info-item">
+                    <span class="home-info-icon"><i class="fa-solid fa-graduation-cap"></i></span>
+                    <div>
+                        <h4>Desenvolvido no âmbito de</h4>
+                        <p>Dissertação de Mestrado em Engenharia de Construção e Reabilitação<br>ESTGV - UPV</p>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="home-footer">
+                <span>M.J. Structural Tools v1.2</span>
+                <span>Desenvolvido por Helder Silva · {% now "Y" %}</span>
+            </footer>
+        </div>
 {% endblock %}

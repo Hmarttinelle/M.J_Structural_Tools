@@ -5,7 +5,6 @@ class HistoricoCalculo(models.Model):
     ELEMENTO_CHOICES = [
         ('Viga', 'Viga'),
         ('Pilar', 'Pilar'),
-        ('Sapata', 'Sapata'),
     ]
 
     elemento = models.CharField(max_length=10, choices=ELEMENTO_CHOICES)
@@ -29,6 +28,7 @@ class SystemConfiguration(models.Model):
         ('dark', 'Escuro'),
     ]
     background_image = models.ImageField(upload_to='backgrounds/', null=True, blank=True, verbose_name="Imagem de Fundo")
+    sidebar_image = models.ImageField(upload_to='sidebar/', null=True, blank=True, verbose_name="Imagem da Barra Lateral")
 
     theme_mode = models.CharField(
         max_length=10,

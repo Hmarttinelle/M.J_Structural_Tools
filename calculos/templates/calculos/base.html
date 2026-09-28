@@ -4,33 +4,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <title>{% block title %}M.J. Structural Tools{% endblock %}</title>
 
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('mj_sidebar_state');
+                if (saved !== 'expanded') {
+                    document.documentElement.classList.add('sidebar-collapsed-preload');
+                }
+            } catch (e) {
+                document.documentElement.classList.add('sidebar-collapsed-preload');
+            }
+        })();
+    </script>
+
     <link rel="stylesheet" href="{% static 'calculos/style.css' %}">
-    
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
     <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     {% if system_config %}
     <style>
         :root {
-            {% if system_config.primary_color %}
-                --primary-color: {{ system_config.primary_color }};
-            {% endif %}
+            {% if system_config.primary_color %}--primary-color: {{ system_config.primary_color }};{% endif %}
         }
     </style>
     {% endif %}
 </head>
 
-<body class="{% if system_config.theme_mode == 'dark' %}dark-theme{% endif %}" {% if system_config and system_config.background_image %}style="background-image: url('{{ system_config.background_image.url }}'); background-size: cover; background-position: center; background-attachment: fixed;"{% endif %}>
+<body class="app-body {% block body_class %}{% endblock %} {% if system_config.theme_mode == 'dark' %}dark-theme{% endif %}"
+      {% if system_config and system_config.background_image %}style="background-image:url('{{ system_config.background_image.url }}');background-size:cover;background-position:center;background-attachment:fixed;background-repeat:no-repeat;"{% endif %}>
 
-    <div class="container">
-        {% block content %}{% endblock %}
+<div class="app-shell" id="app-shell">
+    <aside class="app-sidebar" id="app-sidebar" aria-label="Navegação principal">
+        <div class="app-sidebar-head">
+            <a class="app-brand" href="{% url 'pagina_inicial' %}" title="M.J. Structural Tools">
+                <span class="app-brand-icon"><i class="fa-solid fa-cube"></i></span>
+                <span class="app-brand-copy">
+                    <strong>M.J. Structural Tools</strong>
+                    <small>v1.2</small>
+                </span>
+            </a>
+            <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Expandir ou recolher menu" title="Expandir/recolher menu">
+                <i class="fa-solid fa-angles-left"></i>
+            </button>
+        </div>
+
+        <nav class="app-nav">
+            <a href="{% url 'pagina_inicial' %}" class="app-nav-item {% if request.resolver_match.url_name == 'pagina_inicial' %}active{% endif %}" title="Menu Principal">
+                <span class="app-nav-icon"><i class="fa-solid fa-house"></i></span>
+                <span class="app-nav-label">Menu Principal</span>
+            </a>
+            <a href="{% url 'viga_dimensionamento' %}" class="app-nav-item {% if request.resolver_match.url_name == 'viga_dimensionamento' %}active{% endif %}" title="Dimensionar Viga">
+                <span class="app-nav-icon app-nav-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="4" rx="1"/><path d="M6 13 3.5 18h5L6 13Zm12 0L15.5 18h5L18 13Z"/><path d="M2 19h20"/></svg></span>
+                <span class="app-nav-label">Dimensionar Viga</span>
+            </a>
+            <a href="{% url 'pilar_dimensionamento' %}" class="app-nav-item {% if request.resolver_match.url_name == 'pilar_dimensionamento' %}active{% endif %}" title="Dimensionar Pilar">
+                <span class="app-nav-icon app-nav-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6v18H9z"/><path d="M6 3h12M6 21h12"/></svg></span>
+                <span class="app-nav-label">Dimensionar Pilar</span>
+            </a>
+            <a href="{% url 'sapata_modulo' %}" class="app-nav-item {% if request.resolver_match.url_name == 'sapata_modulo' %}active{% endif %}" title="Sapata, em desenvolvimento">
+                <span class="app-nav-icon app-nav-svg" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 3h4v9h-4z"/><path d="m10 12-6 8h16l-6-8z"/><path d="M2 21h20"/></svg></span>
+                <span class="app-nav-label app-nav-sapata">Sapata <small>Em desenvolvimento</small></span>
+            </a>
+
+            <div class="app-nav-separator"></div>
+
+            <a href="{% url 'historico_calculos' %}" class="app-nav-item {% if request.resolver_match.url_name == 'historico_calculos' or request.resolver_match.url_name == 'historico_detalhe' %}active{% endif %}" title="Histórico de Cálculos">
+                <span class="app-nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                <span class="app-nav-label">Histórico de Cálculos</span>
+            </a>
+            <a href="{% url 'configuracao_sistema' %}" class="app-nav-item {% if request.resolver_match.url_name == 'configuracao_sistema' %}active{% endif %}" title="Configurações">
+                <span class="app-nav-icon"><i class="fa-solid fa-gear"></i></span>
+                <span class="app-nav-label">Configurações</span>
+            </a>
+            <a href="{% url 'pagina_inicial' %}#sobre" class="app-nav-item" title="Sobre">
+                <span class="app-nav-icon"><i class="fa-regular fa-circle-question"></i></span>
+                <span class="app-nav-label">Sobre</span>
+            </a>
+        </nav>
+
+        <div class="app-sidebar-footer">
+            {% if system_config and system_config.sidebar_image %}
+            <div class="app-sidebar-illustration" aria-hidden="true">
+                <img src="{{ system_config.sidebar_image.url }}" alt="">
+            </div>
+            {% else %}
+            <div class="app-wireframe" aria-hidden="true">
+                <svg viewBox="0 0 260 170" preserveAspectRatio="none">
+                    <path d="M14 146 135 92l108 36-121 34Z"/><path d="m14 146 0-74 121-52 108 35v73"/>
+                    <path d="m135 20 0 72M14 72l108 35 121-52M53 55v76M92 38v75M174 32v74M213 45v72"/>
+                    <path d="m14 98 108 36 121-53M14 122l108 35 121-52"/>
+                </svg>
+            </div>
+            {% endif %}
+            <p>Dissertação de Mestrado</p>
+            <small>Engenharia de Construção e Reabilitação<br>ESTGV - UPV</small>
+        </div>
+    </aside>
+
+    <div class="app-main">
+        <header class="app-topbar">
+            <div class="app-topbar-left">
+                <button type="button" class="mobile-sidebar-toggle" id="mobile-sidebar-toggle" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
+                <a href="{% url 'pagina_inicial' %}" class="app-topbar-brand">
+                    <span class="app-topbar-logo"><i class="fa-solid fa-cube"></i></span>
+                    <span class="app-topbar-copy">
+                        <strong>M.J. Structural Tools</strong>
+                        <small>Ferramenta de Dimensionamento dos Elementos Estruturais</small>
+                    </span>
+                </a>
+            </div>
+            <div class="app-topbar-actions">
+                <span class="app-version">v1.2</span>
+                <a href="{% url 'configuracao_sistema' %}" class="app-topbar-icon" title="Configurações"><i class="fa-solid fa-gear"></i></a>
+                <span class="app-avatar">H</span>
+                <span class="app-user-name">Helder Silva</span>
+            </div>
+        </header>
+
+        <main class="app-stage">
+            <div class="container app-page-container {% block container_class %}{% endblock %}">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
     </div>
+</div>
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
-    {% block scripts %}{% endblock %}
+<script>
+(function () {
+    const body = document.body;
+    const html = document.documentElement;
+    const toggle = document.getElementById('sidebar-toggle');
+    const mobileToggle = document.getElementById('mobile-sidebar-toggle');
+    const backdrop = document.getElementById('sidebar-backdrop');
+
+    let collapsed = true;
+    try { collapsed = localStorage.getItem('mj_sidebar_state') !== 'expanded'; } catch (e) {}
+    html.classList.remove('sidebar-collapsed-preload');
+    body.classList.toggle('sidebar-collapsed', collapsed);
+
+    function saveState() {
+        try { localStorage.setItem('mj_sidebar_state', body.classList.contains('sidebar-collapsed') ? 'collapsed' : 'expanded'); } catch (e) {}
+    }
+    function toggleDesktop() {
+        body.classList.toggle('sidebar-collapsed');
+        saveState();
+    }
+    function toggleMobile() { body.classList.toggle('sidebar-mobile-open'); }
+    function closeMobile() { body.classList.remove('sidebar-mobile-open'); }
+
+    if (toggle) toggle.addEventListener('click', toggleDesktop);
+    if (mobileToggle) mobileToggle.addEventListener('click', toggleMobile);
+    if (backdrop) backdrop.addEventListener('click', closeMobile);
+    document.querySelectorAll('.app-nav-item').forEach(el => el.addEventListener('click', closeMobile));
+})();
+</script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

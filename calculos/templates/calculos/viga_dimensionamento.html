@@ -2,143 +2,124 @@
 {% load static %}
 
 {% block title %}Dimensionamento de Vigas{% endblock %}
-
 {% block content %}
-    <a href="{% url 'pagina_inicial' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Voltar ao Menu</a>
-    <h1>Dimensionamento de Viga à Flexão Simples</h1>
-    <p>Insira os dados.</p>
-
-    <form method="post">
-        {% csrf_token %}
-        <div class="form-group"><label>Largura (b) [mm]:</label><input type="number" name="b" value="{{ input_data.b|default:'300' }}" required min="1"></div>
-        <div class="form-group"><label>Altura (h) [mm]:</label><input type="number" name="h" value="{{ input_data.h|default:'500' }}" required min="1"></div>
-        <div class="form-group">
-            <label>Classe do Betão:</label>
-            <select name="f_ck" class="form-control">
-                <option value="20" {% if input_data.f_ck == '20' %}selected{% endif %}>C20/25</option>
-                <option value="25" {% if not input_data.f_ck or input_data.f_ck == '25' %}selected{% endif %}>C25/30</option>
-                <option value="30" {% if input_data.f_ck == '30' %}selected{% endif %}>C30/37</option>
-                <option value="35" {% if input_data.f_ck == '35' %}selected{% endif %}>C35/45</option>
-                <option value="40" {% if input_data.f_ck == '40' %}selected{% endif %}>C40/50</option>
-            </select>
+<div class="engineering-page">
+    <div class="page-breadcrumb"><a href="{% url 'pagina_inicial' %}"><i class="fa-solid fa-house"></i> Menu Principal</a><i class="fa-solid fa-chevron-right"></i><span>Dimensionamento de Viga</span></div>
+    <header class="engineering-header beam-header">
+        <div class="engineering-header-icon"><i class="fa-solid fa-grip-lines"></i></div>
+        <div>
+            <h1>Dimensionamento de Viga</h1>
+            <p>Flexão simples em betão armado segundo a EN 1992-1-1 (Eurocódigo 2).</p>
         </div>
-        <div class="form-group">
-            <label>Classe do Aço:</label>
-             <select name="f_yk" class="form-control">
-                <option value="400" {% if input_data.f_yk == '400' %}selected{% endif %}>A400</option>
-                <option value="500" {% if not input_data.f_yk or input_data.f_yk == '500' %}selected{% endif %}>A500</option>
-            </select>
-        </div>
-        <div class="form-group"><label>Momento (M_Ed) [kNm]:</label><input type="number" step="0.1" name="M_Ed" value="{{ input_data.M_Ed|default:'120' }}" required min="0.1"></div>
-        <div class="form-group"><label>Recobrimento (c_nom) [mm]:</label><input type="number" name="c_nom" value="{{ input_data.c_nom|default:'30' }}" required min="1"></div>
+    </header>
 
-        <div class="form-actions">
-            <button type="submit" class="btn-principal"><i class="fa-solid fa-calculator"></i> Calcular</button>
-            <button type="button" id="limparBtn" class="btn-secundario"><i class="fa-solid fa-eraser"></i> Limpar</button>
-        </div>
-    </form>
+    <div class="engineering-workbench results-below-input">
+        <div class="engineering-main-column">
+        <section class="technical-card input-card">
+            <div class="technical-card-heading">
+                <div><span class="eyebrow">Dados de entrada</span><h2>Geometria, materiais e esforço</h2></div>
+                <span class="standard-chip">EN 1992-1-1</span>
+            </div>
+            <form method="post" class="engineering-form">
+                {% csrf_token %}
+                <div class="field-grid two-columns">
+                    <div class="form-group"><label>Largura da secção <span>b [mm]</span></label><input type="number" name="b" value="{{ input_data.b|default:'300' }}" required min="1"></div>
+                    <div class="form-group"><label>Altura da secção <span>h [mm]</span></label><input type="number" name="h" value="{{ input_data.h|default:'500' }}" required min="1"></div>
+                    <div class="form-group"><label>Classe do Betão</label><select name="f_ck" class="form-control"><option value="20" {% if input_data.f_ck == '20' %}selected{% endif %}>C20/25</option><option value="25" {% if not input_data.f_ck or input_data.f_ck == '25' %}selected{% endif %}>C25/30</option><option value="30" {% if input_data.f_ck == '30' %}selected{% endif %}>C30/37</option><option value="35" {% if input_data.f_ck == '35' %}selected{% endif %}>C35/45</option><option value="40" {% if input_data.f_ck == '40' %}selected{% endif %}>C40/50</option></select></div>
+                    <div class="form-group"><label>Classe do Aço</label><select name="f_yk" class="form-control"><option value="400" {% if input_data.f_yk == '400' %}selected{% endif %}>A400</option><option value="500" {% if not input_data.f_yk or input_data.f_yk == '500' %}selected{% endif %}>A500</option></select></div>
+                    <div class="form-group"><label>Momento de cálculo <span>M<sub>Ed</sub> [kNm]</span></label><input type="number" step="0.1" name="M_Ed" value="{{ input_data.M_Ed|default:'120' }}" required min="0.1"></div>
+                    <div class="form-group"><label>Recobrimento nominal <span>c<sub>nom</sub> [mm]</span></label><input type="number" name="c_nom" value="{{ input_data.c_nom|default:'30' }}" required min="1"></div>
+                </div>
+                <div class="form-actions engineering-actions"><button type="submit" class="btn-principal"><i class="fa-solid fa-calculator"></i> Dimensionar</button><button type="button" id="limparBtn" class="btn-secundario"><i class="fa-solid fa-eraser"></i> Limpar</button></div>
+            </form>
+        </section>
 
-    {% if resultado %}
-        <div class="resultado {% if resultado.status == 'Sucesso' %}sucesso{% else %}erro{% endif %}">
-            <h3>Resultado Final:</h3>
-            <p><strong>{{ resultado.mensagem }}</strong></p>
+        {% if resultado %}
+        <section class="technical-card result-detail-card {% if resultado.status == 'Sucesso' %}result-ok{% else %}result-error{% endif %}">
+            <div class="technical-card-heading compact">
+                <div>
+                    <span class="eyebrow">Resultado final</span>
+                    <h2>{% if resultado.status == 'Sucesso' %}Dimensionamento da viga{% else %}Não foi possível concluir o dimensionamento{% endif %}</h2>
+                </div>
+                <span class="status-dot"><i class="fa-solid {% if resultado.status == 'Sucesso' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i></span>
+            </div>
+            <p class="result-message result-message-large">{{ resultado.mensagem }}</p>
+
             {% if resultado.status == 'Sucesso' %}
-                <p style="font-size: 1.1rem; margin-bottom: 15px;">
-                    <strong>Armadura Ótima a Adotar: {{ resultado.combinacao_final }} ({{ resultado.As_final_cm2 }} cm²)</strong>
-                </p>
-                <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
-                <p style="font-size: 0.9rem; color: #555;"><strong>Opções Consideradas:</strong></p>
+            <div class="result-highlight-box">
+                <span>Armadura de tração a adotar</span>
+                <strong>{{ resultado.combinacao_final }}</strong>
+                <small>A<sub>s</sub> = {{ resultado.As_final_cm2 }} cm²</small>
+            </div>
+
+            {% if resultado.tipo_secao == 'armadura_compressao' %}
+            <div class="result-highlight-box secondary-highlight-box">
+                <span>Armadura de compressão a adotar</span>
+                <strong>{{ resultado.combinacao_compressao }}</strong>
+                <small>A<sub>sc</sub> = {{ resultado.Asc_final_cm2 }} cm²</small>
+            </div>
+            {% endif %}
+
+            <div class="result-description-list">
+                {% if resultado.M_Rd_kNm %}
+                <div class="result-description-row">
+                    <span class="result-description-label">Momento resistente</span>
+                    <span class="result-description-value">M<sub>Rd</sub> = {{ resultado.M_Rd_kNm }} kNm</span>
+                </div>
+                {% endif %}
+                {% if resultado.xi_final %}
+                <div class="result-description-row">
+                    <span class="result-description-label">Ductilidade da secção</span>
+                    <span class="result-description-value">x/d = {{ resultado.xi_final }}{% if resultado.verificacao_ductilidade %} ≤ 0,45{% endif %}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if resultado.combinacao_mista or resultado.combinacao_unica %}
+            <div class="result-options-block">
+                <strong>Opções de armadura consideradas</strong>
                 {% if resultado.combinacao_mista %}
-                    <p style="font-size: 0.9rem; margin: 5px 0;">• <strong>Opção Mista:</strong> {{ resultado.combinacao_mista.combinacao_str }} ({{ resultado.combinacao_mista.As_final_cm2 }} cm²)</p>
+                <p><span>Opção mista:</span> {{ resultado.combinacao_mista.combinacao_str }} ({{ resultado.combinacao_mista.As_final_cm2 }} cm²)</p>
                 {% endif %}
                 {% if resultado.combinacao_unica %}
-                    <p style="font-size: 0.9rem; margin: 5px 0;">• <strong>Opção Diâmetro Único:</strong> {{ resultado.combinacao_unica.combinacao_str }} ({{ resultado.combinacao_unica.As_final_cm2 }} cm²)</p>
+                <p><span>Diâmetro único:</span> {{ resultado.combinacao_unica.combinacao_str }} ({{ resultado.combinacao_unica.As_final_cm2 }} cm²)</p>
                 {% endif %}
+            </div>
             {% endif %}
-        </div>
-        
-        {% if resultado.status == 'Sucesso' %}
-        <div class="form-actions" style="margin-top: 20px; justify-content: center;">
-             <a href="{% url 'gerar_relatorio_pdf' resultado.calculo_id %}" target="_blank" class="btn-secundario">
-                <i class="fa-solid fa-file-pdf"></i> Gerar Relatório PDF
-            </a>
+
+            {% if resultado.calculo_id %}
+            <a href="{% url 'gerar_relatorio_pdf' resultado.calculo_id %}" target="_blank" class="report-link report-link-inline"><i class="fa-solid fa-file-pdf"></i> Gerar relatório PDF</a>
+            {% endif %}
+            {% endif %}
+        </section>
+        {% endif %}
         </div>
 
-        {% if resultado.desenho_svg %}
-        <div class="desenho-wrapper" style="margin-top: 30px;">
-            <h4>Representação Gráfica da Secção</h4>
-            <div id="desenho-container" style="max-width: 400px; margin: 20px auto 0;">
-                {{ resultado.desenho_svg|safe }}
-            </div>
-            <div style="text-align: center; margin-top: 15px;">
-                <button class="btn-secundario" style="padding: 5px 10px; font-size: 0.8rem;" onclick="exportarSVG('desenho-container', 'desenho_viga.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button>
-            </div>
-        </div>
-        {% endif %}
-        {% if resultado.passos %}
-        <div class="passo-a-passo" style="margin-top: 20px;">
-            <h4>Cálculo Detalhado (Passo a Passo):</h4>
-            <ul>
-                {% for passo in resultado.passos %}
-                    <li>
-                        <strong>{{ passo.titulo }}</strong>
-                        {% if passo.formula %}<div style="margin: 5px 0; color: #005a9c;">Fórmula: \( {{ passo.formula }} \)</div>{% endif %}
-                        <div style="margin-left: 10px; line-height: 1.8;">{{ passo.calculo|safe }}</div>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-        {% endif %}
-    {% endif %}
+        <aside class="engineering-sidebar-panel">
+            {% if not resultado %}
+                <section class="technical-card guidance-card">
+                    <div class="guidance-icon"><i class="fa-solid fa-ruler-combined"></i></div>
+                    <h2>Dimensionamento de viga</h2>
+                    <p>Introduza os dados da secção e o momento de cálculo. A aplicação determina a armadura longitudinal e verifica os critérios resistentes implementados.</p>
+                    <ul class="guidance-list"><li><i class="fa-solid fa-check"></i> Classes de betão até C40/50</li><li><i class="fa-solid fa-check"></i> Aços A400 e A500</li><li><i class="fa-solid fa-check"></i> Relatório PDF e representação SVG</li></ul>
+                </section>
+            {% endif %}
+
+            {% if resultado.status == 'Sucesso' and resultado.desenho_svg %}
+            <section class="technical-card section-card"><div class="technical-card-heading compact"><div><span class="eyebrow">Secção e armaduras</span><h2>Representação gráfica</h2></div></div><div id="desenho-container" class="section-preview">{{ resultado.desenho_svg|safe }}</div>{% if resultado.tipo_secao == 'simplesmente_armada' %}<p class="technical-note">Os varões superiores são armadura construtiva de montagem e não são contabilizados na resistência principal à flexão.</p>{% elif resultado.tipo_secao == 'armadura_compressao' %}<p class="technical-note">Inferior: {{ resultado.combinacao_final }} · Superior: {{ resultado.combinacao_compressao }}</p>{% endif %}<button class="btn-secundario compact-btn" type="button" onclick="exportarSVG('desenho-container','desenho_viga.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button></section>
+            {% endif %}
+        </aside>
+    </div>
+
+    {% if resultado.status == 'Sucesso' and resultado.graficos_materiais_svg %}<section class="technical-card full-width-card"><div class="technical-card-heading"><div><span class="eyebrow">Estado limite resistente</span><h2>Betão e aço</h2></div><button type="button" class="btn-secundario compact-btn" onclick="exportarSVG('graficos-materiais-container','graficos_materiais_viga.svg')"><i class="fa-solid fa-file-image"></i> Exportar SVG</button></div><div id="graficos-materiais-container" class="materials-visual">{{ resultado.graficos_materiais_svg|safe }}</div></section>{% endif %}
+
+    {% if resultado.status == 'Sucesso' and resultado.passos %}<section class="technical-card full-width-card calculation-card"><div class="technical-card-heading"><div><span class="eyebrow">Memória de cálculo</span><h2>Cálculo detalhado</h2></div><span class="standard-chip">Passo a passo</span></div><ol class="calculation-steps">{% for passo in resultado.passos %}<li><div class="step-index">{{ forloop.counter }}</div><div class="step-body"><strong>{{ passo.titulo }}</strong>{% if passo.formula %}<div class="formula-line">\( {{ passo.formula }} \)</div>{% endif %}<div class="calculation-line">{{ passo.calculo|safe }}</div></div></li>{% endfor %}</ol></section>{% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form');
-            const spinnerOverlay = document.getElementById('spinner-overlay');
-            if (form && spinnerOverlay) {
-                form.addEventListener('submit', function() {
-                    spinnerOverlay.style.display = 'flex';
-                });
-            }
-        });
-    </script>
-    <script>
-        function exportarSVG(containerId, filename) {
-            const container = document.getElementById(containerId);
-            if (!container) { console.error("Contentor do SVG não encontrado:", containerId); return; }
-            const svgElement = container.querySelector('svg');
-            if (!svgElement) { console.error("Elemento SVG não encontrado dentro de:", containerId); return; }
-            const serializer = new XMLSerializer();
-            let source = serializer.serializeToString(svgElement);
-            if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
-                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-            }
-            if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
-                source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-            }
-            const blob = new Blob([source], {type: "image/svg+xml;charset=utf-8"});
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
-    </script>
-    <script>
-        document.getElementById('limparBtn').addEventListener('click', function() {
-            const form = this.closest('form');
-            form.querySelector('input[name="b"]').value = '';
-            form.querySelector('input[name="h"]').value = '';
-            form.querySelector('input[name="M_Ed"]').value = '';
-            form.querySelector('input[name="c_nom"]').value = '';
-            form.querySelector('select[name="f_ck"]').value = '25';
-            form.querySelector('select[name="f_yk"]').value = '500';
-        });
-    </script>
+<script>
+function exportarSVG(containerId, filename) { const container=document.getElementById(containerId); if(!container)return; const svgElement=container.querySelector('svg'); if(!svgElement)return; const serializer=new XMLSerializer(); let source=serializer.serializeToString(svgElement); if(!source.match(/^<svg[^>]+xmlns=/)){source=source.replace(/^<svg/,'<svg xmlns="http://www.w3.org/2000/svg"');} const blob=new Blob([source],{type:'image/svg+xml;charset=utf-8'}); const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.href=url; link.download=filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); }
+document.addEventListener('DOMContentLoaded',function(){ const limpar=document.getElementById('limparBtn'); if(limpar){ limpar.addEventListener('click',function(){ const form=this.closest('form'); form.querySelector('input[name="b"]').value=''; form.querySelector('input[name="h"]').value=''; form.querySelector('input[name="M_Ed"]').value=''; form.querySelector('input[name="c_nom"]').value=''; form.querySelector('select[name="f_ck"]').value='25'; form.querySelector('select[name="f_yk"]').value='500'; }); }});
+</script>
 {% endblock %}
