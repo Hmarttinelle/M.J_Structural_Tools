@@ -9,6 +9,13 @@ A ferramenta permite a engenheiros e estudantes de engenharia civil realizar cá
 
 ![Screenshot da Página Principal](docs/images/menu_principal.png)
 
+## Novidades na Versão 1.2 (Atualização de UI/UX)
+
+* **Design Premium ("Dark Glassmorphism"):** O cabeçalho da página principal foi totalmente remodelado com um painel translúcido escuro, oferecendo maior contraste e legibilidade sobre imagens de fundo.
+* **Novas Ilustrações 3D:** Substituição dos antigos ícones 2D (vetores lineares) por renders 3D minimalistas e de alta qualidade para os módulos de Viga, Pilar e Sapata.
+* **Dashboard Interativo e Moderno:** Os cartões dos módulos agora utilizam um layout sobreposto ao cabeçalho (overlapping), com bordos arredondados e um elegante efeito de elevação dinâmica ao passar o cursor do rato.
+* **Menu Lateral (Sidebar) Otimizado:** Nova paleta de cores escuras e neutras (Navy/Dark Gray) na barra lateral, proporcionando um aspeto mais "clean" e profissional que realça a cor de destaque da aplicação.
+
 ## Funcionalidades Principais
 
 O sistema está preparado para dimensionar os seguintes elementos estruturais:
