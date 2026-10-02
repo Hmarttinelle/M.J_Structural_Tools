@@ -190,6 +190,9 @@ def viga_view(request):
             b = float(request.POST.get('b'))
             h = float(request.POST.get('h'))
             f_ck = float(request.POST.get('f_ck'))
+            
+           # breakpoint() # <--- Ponto de paragem adicionado para debug interativo
+            
             f_yk = float(request.POST.get('f_yk'))
             M_Ed_kNm = float(request.POST.get('M_Ed'))
             c_nom = float(request.POST.get('c_nom'))
