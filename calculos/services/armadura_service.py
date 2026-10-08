@@ -1,227 +1,16 @@
 # calculos/services/armadura_service.py
 import math
-from itertools import combinations, combinations_with_replacement, permutations
+from itertools import combinations
 
-# Diâmetros de varão padrão [mm] e respetivas áreas [cm²]
-VERGALHOES_PADRAO = {
-    10: 0.785,
-    12: 1.131,
-    16: 2.011,
-    20: 3.142,
-    25: 4.909,
-    32: 8.042,
-    40: 12.566,
-    50: 19.635,
-    55: 23.758,
-    60: 28.274,
-}
+"""
+Geração e seleção finita de armaduras longitudinais.
 
+O módulo contém apenas os domínios construtivos atualmente utilizados pela
+aplicação:
+  - vigas: Ø10, Ø12, Ø16, Ø20, Ø25 e Ø32, uma camada por face;
+  - pilares: Ø12, Ø16, Ø20, Ø25 e Ø32, com disposições simétricas.
 
-def _verificar_espacamento(combinacao, largura_disponivel, dg_mm=None):
-    """Verifica se uma dada combinação de diâmetros de varão respeita o espaçamento mínimo."""
-    num_barras = len(combinacao)
-    if num_barras <= 1:
-        return True
-    espacamento_minimo_horizontal = max(max(combinacao), 20, dg_mm + 5 if dg_mm is not None else 0)
-    largura_necessaria = sum(combinacao) + (num_barras - 1) * espacamento_minimo_horizontal
-    return largura_necessaria <= largura_disponivel
-
-
-def _criterio_selecao(solucao):
-    """
-    Critério hierárquico de seleção:
-      1. menor As,prov (area_total_cm2);
-      2. em empate, menor número de varões;
-      3. em novo empate, menor número de diâmetros distintos;
-      4. em novo empate, menor diâmetro máximo.
-    """
-    counts = solucao["counts"]
-    return (
-        round(solucao["area_total_cm2"], 4),
-        sum(counts.values()),
-        len(counts),
-        max(counts.keys()),
-    )
-
-
-def encontrar_combinacoes_otimas(As_req_cm2, largura_disponivel_mm, tipo_elemento="viga", dg_mm=None):
-    """
-    Encontra a melhor combinação de diâmetro único, a melhor combinação mista e a solução ótima
-    segundo o critério hierárquico, satisfazendo a área de aço requerida e os espaçamentos mínimos.
-    """
-    if As_req_cm2 is None or As_req_cm2 <= 0:
-        raise ValueError("A área de armadura requerida deve ser estritamente positiva.")
-    if largura_disponivel_mm is None or largura_disponivel_mm <= 0:
-        raise ValueError("A largura disponível deve ser estritamente positiva.")
-
-    solucoes_unicas = []
-    solucoes_mistas = []
-    diametros = sorted(list(VERGALHOES_PADRAO.keys()))
-
-    max_barras = 8
-    todas_as_combinacoes = []
-
-    for num_barras in range(2, max_barras + 1):
-        # 1. Combinações de diâmetro único (ex: [12, 12, 12])
-        for diametro in diametros:
-            todas_as_combinacoes.append(tuple([diametro] * num_barras))
-
-        # 2. Combinações de diâmetros mistos (simétricas)
-        if num_barras >= 4 and num_barras % 2 == 0:
-            pares_de_diametros = list(combinations_with_replacement(diametros, 2))
-            for d1, d2 in pares_de_diametros:
-                if d1 == d2:
-                    continue
-                # Gera splits simétricos (ex: para 4 barras: 2+2; para 6: 2+4 e 4+2; para 8: 2+6, 4+4, 6+2)
-                for i in range(1, num_barras // 2 + 1):
-                    n1 = i * 2
-                    n2 = num_barras - n1
-                    if n2 == 0:
-                        continue
-                    comb = tuple(sorted([d1] * n1 + [d2] * n2))
-                    todas_as_combinacoes.append(comb)
-
-    # Remove duplicados e ordena
-    todas_as_combinacoes = sorted(list(set(todas_as_combinacoes)), key=lambda x: (len(x), sum(x)))
-
-    # 3. Verifica cada combinação e guarda as válidas
-    for comb in todas_as_combinacoes:
-        if _verificar_espacamento(comb, largura_disponivel_mm, dg_mm):
-            area_total_cm2 = sum(VERGALHOES_PADRAO[d] for d in comb)
-            if area_total_cm2 >= As_req_cm2:
-                counts = {d: comb.count(d) for d in set(comb)}
-                combinacao_str = " + ".join([f"{count} Ø {diam}" for diam, count in sorted(counts.items())])
-
-                solucao_info = {
-                    "combinacao_str": combinacao_str,
-                    "area_total_cm2": area_total_cm2,
-                    "As_final_cm2": round(area_total_cm2, 2),
-                    "counts": counts,
-                }
-
-                if len(counts) > 1:
-                    solucoes_mistas.append(solucao_info)
-                else:
-                    solucoes_unicas.append(solucao_info)
-
-    # 4. Encontra a melhor solução de cada categoria segundo o critério hierárquico
-    melhor_unica = min(solucoes_unicas, key=_criterio_selecao) if solucoes_unicas else None
-    melhor_mista = min(solucoes_mistas, key=_criterio_selecao) if solucoes_mistas else None
-
-    candidatas = [s for s in (melhor_unica, melhor_mista) if s]
-    melhor_otima = min(candidatas, key=_criterio_selecao) if candidatas else None
-
-    return {
-        "unica": melhor_unica,
-        "mista": melhor_mista,
-        "otima": melhor_otima,
-    }
-
-
-def encontrar_combinacoes_otimas_pilar(As_req_cm2, largura_disponivel_mm, b_mm=None, h_mm=None):
-    """
-    Encontra a melhor combinação de armadura para PILARES, garantindo um número
-    par de varões para manter a simetria (mínimo de 4 varões).
-    Se a secção for quadrada (b ~= h), dá preferência a soluções de diâmetro único ou perfeitamente simétricas.
-    """
-    solucoes_unicas = []
-    solucoes_mistas = []
-    diametros = sorted(list(VERGALHOES_PADRAO.keys()))
-
-    max_barras = 8
-
-    # O loop só itera sobre números pares (4, 6, 8)
-    for num_barras in range(4, max_barras + 1, 2):
-
-        # 1. Combinações de diâmetro único (ex: 4Ø12, 6Ø12, etc.)
-        for diametro in diametros:
-            comb = tuple([diametro] * num_barras)
-            if _verificar_espacamento(comb, largura_disponivel_mm):
-                area_total_cm2 = sum(VERGALHOES_PADRAO[d] for d in comb)
-                if area_total_cm2 >= As_req_cm2:
-                    combinacao_str = f"{num_barras} Ø {diametro}"
-                    counts = {diametro: num_barras}
-                    solucoes_unicas.append({
-                        "combinacao_str": combinacao_str,
-                        "area_total_cm2": area_total_cm2,
-                        "counts": counts,
-                    })
-
-        # 2. Combinações de diâmetros mistos (simétricas)
-        pares_de_diametros = list(permutations(diametros, 2))
-        for d1, d2 in pares_de_diametros:
-            # Gera splits simétricos. Ex: para 6 barras -> 2+4; para 8 barras -> 2+6 e 4+4
-            for i in range(1, num_barras // 2 + 1):
-                n1 = i * 2
-                n2 = num_barras - n1
-                if n2 == 0:
-                    continue
-                if n1 > n2:
-                    continue  # Evita duplicados como 6+2 depois de 2+6
-
-                comb = tuple(sorted([d1] * n1 + [d2] * n2))
-                if _verificar_espacamento(comb, largura_disponivel_mm):
-                    area_total_cm2 = sum(VERGALHOES_PADRAO[d] for d in comb)
-                    if area_total_cm2 >= As_req_cm2:
-                        counts = {d: comb.count(d) for d in set(comb)}
-                        combinacao_str = " + ".join([f"{count} Ø {diam}" for diam, count in sorted(counts.items())])
-                        solucoes_mistas.append({
-                            "combinacao_str": combinacao_str,
-                            "area_total_cm2": area_total_cm2,
-                            "counts": counts,
-                        })
-
-    # -------------------------------------------------------------------------
-    # Regras Construtivas de Pilares: Simetria em 4 varões e Cantos iguais
-    # -------------------------------------------------------------------------
-    mistas_filtradas = []
-    for m in solucoes_mistas:
-        counts = m.get("counts", {})
-        total_barras = sum(counts.values())
-
-        # Regra de simetria para 4 varões:
-        if total_barras == 4:
-            continue
-
-        # 4 cantos com mesmo diâmetro quando há mais varões:
-        if total_barras > 4:
-            if not any(c >= 4 for c in counts.values()):
-                continue
-
-        mistas_filtradas.append(m)
-
-    solucoes_mistas = mistas_filtradas
-
-    # Regra específica para secções quadradas:
-    is_quadrado = False
-    if b_mm is not None and h_mm is not None:
-        if abs(b_mm - h_mm) <= 5:
-            is_quadrado = True
-
-    if is_quadrado:
-        if solucoes_unicas:
-            solucoes_mistas = []
-        else:
-            mistas_simetricas = []
-            for m in solucoes_mistas:
-                if all(c % 4 == 0 for c in m["counts"].values()):
-                    mistas_simetricas.append(m)
-            solucoes_mistas = mistas_simetricas
-
-    melhor_unica = min(solucoes_unicas, key=lambda x: x["area_total_cm2"]) if solucoes_unicas else None
-    melhor_mista = min(solucoes_mistas, key=lambda x: x["area_total_cm2"]) if solucoes_mistas else None
-
-    if melhor_unica:
-        melhor_unica["As_final_cm2"] = round(melhor_unica["area_total_cm2"], 2)
-    if melhor_mista:
-        melhor_mista["As_final_cm2"] = round(melhor_mista["area_total_cm2"], 2)
-
-    return {
-        "unica": melhor_unica,
-        "mista": melhor_mista,
-    }
-
-
+"""
 
 # ==============================================================================
 # SELEÇÃO FINITA DE ARMADURAS PARA PILARES
@@ -303,7 +92,6 @@ def gerar_posicoes_pilar(
         })
 
     return posicoes
-
 
 
 def gerar_posicoes_pilar_duas_faces(
@@ -862,10 +650,9 @@ def selecionar_viga(
         raise ValueError("A resistência característica do aço deve ser positiva.")
     if M_Ed_kNm < 0:
         raise ValueError("O momento fletor de cálculo deve ser não negativo.")
-    if c_nom < 8:
+    if c_nom <= 0:
         raise ValueError(
-            "Recobrimento insuficiente para o diâmetro dos estribos assumidos; "
-            "rever o recobrimento de projeto."
+            "O recobrimento nominal deve ser positivo."
         )
     if dg_mm <= 0:
         raise ValueError(
@@ -882,17 +669,13 @@ def selecionar_viga(
     f_cd = f_ck / gamma_c
     f_yd = f_yk / gamma_s
 
-    # Mantém a regra existente do seletor original.
-    diametros_admissiveis = tuple(
+    # O catálogo definido para a viga é pesquisado integralmente.
+    # A admissibilidade de cada diâmetro é determinada pelas verificações
+    # geométricas e resistentes, sem pré-filtro em função de c_nom.
+    diametros_pesquisa = tuple(
         float(phi)
         for phi in diametros
-        if float(phi) <= c_nom + phi_estribo
     )
-
-    if not diametros_admissiveis:
-        raise ValueError(
-            "Não existem diâmetros admissíveis para o recobrimento informado."
-        )
 
     largura_disponivel = b - 2.0 * (c_nom + phi_estribo)
 
@@ -906,7 +689,7 @@ def selecionar_viga(
         for solucao in gerar_combinacoes_viga(
             largura_disponivel,
             dg_mm,
-            diametros_admissiveis,
+            diametros_pesquisa,
         )
         if solucao["area_total_cm2"] * 100.0
         <= 0.04 * b * h + 1e-9

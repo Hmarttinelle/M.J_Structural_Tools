@@ -7,6 +7,9 @@ A bateria cobre os casos de referência usados na auditoria final da aplicação
 - viga com armadura de compressão;
 - pilar não esbelto;
 - pilar esbelto;
+- limite de resistência do betão no âmbito do modelo;
+- secção integralmente comprimida com x > h;
+- transição na fronteira de esbelteza;
 - comprimento efetivo manual;
 - fluência;
 - momentos distintos nas extremidades;
@@ -19,44 +22,64 @@ from .services import armadura_service, pilar_service, viga_service
 
 
 class ArmaduraServiceTests(TestCase):
-    """Critério hierárquico de seleção da armadura."""
+    """Geração finita das armaduras no domínio construtivo atual."""
 
-    def test_solucao_otima_minimiza_area_fornecida(self):
-        resultado = armadura_service.encontrar_combinacoes_otimas(
-            As_req_cm2=7.82,
+    def test_geracao_viga_respeita_dominio_construtivo(self):
+        solucoes = armadura_service.gerar_combinacoes_viga(
             largura_disponivel_mm=214,
-            tipo_elemento="viga",
-        )
-        self.assertIsNotNone(resultado["unica"])
-        self.assertIsNotNone(resultado["mista"])
-        self.assertIsNotNone(resultado["otima"])
-        self.assertGreaterEqual(resultado["otima"]["area_total_cm2"], 7.82)
-        self.assertLessEqual(
-            resultado["otima"]["area_total_cm2"],
-            resultado["unica"]["area_total_cm2"] + 1e-12,
-        )
-        self.assertLessEqual(
-            resultado["otima"]["area_total_cm2"],
-            resultado["mista"]["area_total_cm2"] + 1e-12,
+            dg_mm=20,
         )
 
-    def test_geracao_inclui_combinacao_mista_2_mais_2(self):
-        resultado = armadura_service.encontrar_combinacoes_otimas(
-            As_req_cm2=7.82,
+        self.assertTrue(solucoes)
+
+        catalogo = set(armadura_service.DIAMETROS_VIGA)
+
+        for solucao in solucoes:
+            barras = solucao["barras"]
+
+            self.assertGreaterEqual(solucao["n_barras"], 2)
+            self.assertLessEqual(solucao["n_barras"], 8)
+            self.assertLessEqual(solucao["n_diametros"], 2)
+            self.assertTrue(set(barras).issubset(catalogo))
+
+            # A construção da camada é simétrica em relação ao eixo vertical.
+            self.assertEqual(barras, barras[::-1])
+
+            espacamento_minimo = max(
+                max(barras),
+                20.0,
+                25.0,  # dg + 5, com dg = 20 mm
+            )
+            self.assertGreaterEqual(
+                solucao["espacamento_livre_mm"] + 1e-9,
+                espacamento_minimo,
+            )
+
+    def test_geracao_viga_inclui_combinacao_mista_simetrica(self):
+        solucoes = armadura_service.gerar_combinacoes_viga(
             largura_disponivel_mm=214,
-            tipo_elemento="viga",
+            dg_mm=20,
         )
-        combinacao = resultado["mista"]["counts"]
-        self.assertEqual(sum(combinacao.values()), 4)
-        self.assertEqual(len(combinacao), 2)
-        self.assertTrue(all(n == 2 for n in combinacao.values()))
 
-    def test_rejeita_area_requerida_invalida(self):
+        alvo = next(
+            (
+                solucao
+                for solucao in solucoes
+                if solucao["counts"] == {12.0: 2, 16.0: 2}
+            ),
+            None,
+        )
+
+        self.assertIsNotNone(alvo)
+        self.assertEqual(alvo["n_barras"], 4)
+        self.assertEqual(alvo["n_diametros"], 2)
+        self.assertEqual(alvo["barras"], [16.0, 12.0, 12.0, 16.0])
+
+    def test_geracao_viga_rejeita_largura_invalida(self):
         with self.assertRaises(ValueError):
-            armadura_service.encontrar_combinacoes_otimas(
-                As_req_cm2=0,
-                largura_disponivel_mm=250,
-                tipo_elemento="viga",
+            armadura_service.gerar_combinacoes_viga(
+                largura_disponivel_mm=0,
+                dg_mm=20,
             )
 
 
@@ -232,6 +255,181 @@ class PilarServiceTests(TestCase):
         self.assertAlmostEqual(float(resultado["C_esbelteza"]), 2.2, places=6)
         self.assertAlmostEqual(float(resultado["M_Ed_total_kNm"]), 108.4, places=2)
         self.assertGreaterEqual(float(resultado["M_Rd_kNm"]), float(resultado["M_Ed_total_kNm"]))
+
+    def test_pilar_aceita_fck_50_e_rejeita_superior(self):
+        dados = dict(self.DADOS_BASE)
+        dados["f_ck"] = 50
+
+        resultado = pilar_service.dimensionar_pilar(**dados)
+        self.assertEqual(resultado["status"], "Sucesso")
+
+        dados["f_ck"] = 51
+        with self.assertRaisesRegex(ValueError, r"fck ≤ 50 MPa"):
+            pilar_service.dimensionar_pilar(**dados)
+
+    def test_secao_integralmente_comprimida_usa_charneira_epsilon_c3(self):
+        resultado = pilar_service.dimensionar_pilar(
+            b_mm=250,
+            h_mm=250,
+            l_m=3.0,
+            cond_ligacao="artic-artic",
+            f_ck=30,
+            f_yk=500,
+            N_Ed_kN=1600,
+            M_Ed_kNm=0,
+            c_nom_mm=30,
+        )
+
+        self.assertGreater(float(resultado["x_mm"]), 250.0)
+        self.assertEqual(
+            resultado["regime_deformacao"],
+            "secao_integralmente_comprimida",
+        )
+        self.assertEqual(
+            resultado["modo_rotura"],
+            "secao_integralmente_comprimida",
+        )
+
+        x_mm = float(resultado["x_mm"])
+        epsilon_esperada = 1.75e-3 / (1.0 - 250.0 / (2.0 * x_mm))
+
+        self.assertAlmostEqual(
+            float(resultado["epsilon_c_max"]),
+            epsilon_esperada,
+            places=12,
+        )
+        self.assertGreater(float(resultado["epsilon_c_max"]), 1.75e-3)
+        self.assertLess(float(resultado["epsilon_c_max"]), 3.5e-3)
+        self.assertAlmostEqual(float(resultado["N_Rd_kN"]), 1600.0, places=2)
+        self.assertGreaterEqual(
+            float(resultado["M_Rd_kNm"]),
+            float(resultado["M_Ed_total_kNm"]),
+        )
+
+    def test_fronteira_esbelteza_muda_entre_l0_279_e_280(self):
+        comum = {
+            "b_mm": 300,
+            "h_mm": 400,
+            "l_m": None,
+            "cond_ligacao": None,
+            "f_ck": 25,
+            "f_yk": 500,
+            "N_Ed_kN": 800,
+            "M_Ed_kNm": 100,
+            "c_nom_mm": 30,
+            "usar_l0_manual": True,
+        }
+
+        abaixo = pilar_service.dimensionar_pilar(
+            **comum,
+            l0_manual_m=2.79,
+        )
+        acima = pilar_service.dimensionar_pilar(
+            **comum,
+            l0_manual_m=2.80,
+        )
+
+        self.assertEqual(abaixo["combinacao_final"], "4 Ø 12")
+        self.assertEqual(acima["combinacao_final"], "4 Ø 12")
+
+        self.assertLessEqual(
+            float(abaixo["lambda"]),
+            float(abaixo["lambda_lim"]),
+        )
+        self.assertEqual(abaixo["classificacao"], "Não esbelto")
+        self.assertAlmostEqual(float(abaixo["M2_kNm"]), 0.0, places=12)
+
+        self.assertGreater(
+            float(acima["lambda"]),
+            float(acima["lambda_lim"]),
+        )
+        self.assertEqual(acima["classificacao"], "Esbelto")
+        self.assertGreater(float(acima["M2_kNm"]), 0.0)
+
+    def test_momentos_extremidade_mesmo_sinal_preservam_rm_e_c(self):
+        resultado = pilar_service.dimensionar_pilar(
+            b_mm=300,
+            h_mm=400,
+            l_m=8.0,
+            cond_ligacao="encab-artic",
+            f_ck=25,
+            f_yk=500,
+            N_Ed_kN=800,
+            M_Ed_kNm=0.0,
+            c_nom_mm=30,
+            usar_momentos_extremidade=True,
+            M_01_kNm=50.0,
+            M_02_kNm=100.0,
+        )
+
+        self.assertTrue(resultado["usar_momentos_extremidade"])
+        self.assertAlmostEqual(float(resultado["r_m"]), 0.5, places=12)
+        self.assertAlmostEqual(float(resultado["C_esbelteza"]), 1.2, places=12)
+        self.assertAlmostEqual(
+            float(resultado["M_01_analise_kNm"]),
+            50.0,
+            places=12,
+        )
+        self.assertAlmostEqual(
+            float(resultado["M_02_analise_kNm"]),
+            100.0,
+            places=12,
+        )
+
+        self.assertEqual(resultado["classificacao"], "Esbelto")
+        self.assertGreater(float(resultado["M2_kNm"]), 0.0)
+        self.assertEqual(
+            resultado["termo_momento_governante"],
+            "M0e + M2",
+        )
+        self.assertAlmostEqual(
+            float(resultado["M_Ed_total_kNm"]),
+            float(resultado["M0e_kNm"]) + float(resultado["M2_kNm"]),
+            places=9,
+        )
+        self.assertGreaterEqual(
+            float(resultado["M_Rd_kNm"]),
+            float(resultado["M_Ed_total_kNm"]),
+        )
+
+    def test_phi_ef_zero_reproduz_caso_sem_fluencia(self):
+        sem_fluencia = pilar_service.dimensionar_pilar(**self.DADOS_BASE)
+        phi_zero = pilar_service.dimensionar_pilar(
+            **self.DADOS_BASE,
+            considerar_fluencia=True,
+            phi_ef=0.0,
+        )
+
+        self.assertEqual(
+            phi_zero["combinacao_final"],
+            sem_fluencia["combinacao_final"],
+        )
+        self.assertAlmostEqual(
+            float(phi_zero["lambda_lim"]),
+            float(sem_fluencia["lambda_lim"]),
+            places=12,
+        )
+        self.assertEqual(
+            phi_zero["classificacao"],
+            sem_fluencia["classificacao"],
+        )
+        self.assertAlmostEqual(
+            float(phi_zero["M2_kNm"]),
+            float(sem_fluencia["M2_kNm"]),
+            places=12,
+        )
+        self.assertAlmostEqual(
+            float(phi_zero["M_Ed_total_kNm"]),
+            float(sem_fluencia["M_Ed_total_kNm"]),
+            places=12,
+        )
+        self.assertAlmostEqual(
+            float(phi_zero["M_Rd_kNm"]),
+            float(sem_fluencia["M_Rd_kNm"]),
+            places=12,
+        )
+        self.assertAlmostEqual(float(phi_zero["K_phi"]), 1.0, places=12)
+        self.assertAlmostEqual(float(phi_zero["phi_ef"]), 0.0, places=12)
 
     def test_varoes_do_pilar_sao_representados_a_vermelho(self):
         resultado = pilar_service.dimensionar_pilar(**self.DADOS_BASE)

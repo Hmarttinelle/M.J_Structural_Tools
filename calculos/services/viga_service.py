@@ -25,23 +25,29 @@ def _validar_entradas(b, h, f_ck, f_yk, M_Ed_kNm, c_nom):
 
     if b <= 0 or h <= 0:
         raise ValueError("As dimensões da secção devem ser positivas.")
-    if f_ck <= 0 or f_yk <= 0:
-        raise ValueError("As resistências dos materiais devem ser positivas.")
+    if not 0 < f_ck <= 50:
+        raise ValueError(
+            "O modelo de cálculo da viga está limitado a 0 < fck <= 50 MPa."
+        )
+    if f_yk <= 0:
+        raise ValueError("A resistência característica do aço deve ser positiva.")
     if M_Ed_kNm < 0:
         raise ValueError("O momento fletor de cálculo deve ser não negativo.")
-    if c_nom < 0:
-        raise ValueError("O recobrimento nominal não pode ser negativo.")
+    if c_nom <= 0:
+        raise ValueError("O recobrimento nominal deve ser positivo.")
 
 
 def _f_ctm(f_ck):
     """
     Resistência média à tração do betão usada no cálculo de As,min.
-    """
-    if f_ck <= 50:
-        return 0.30 * f_ck ** (2.0 / 3.0)
 
-    f_cm = f_ck + 8.0
-    return 2.12 * math.log(1.0 + f_cm / 10.0)
+    O modelo adotado no Capítulo 3 está limitado a fck <= 50 MPa.
+    """
+    if not 0 < f_ck <= 50:
+        raise ValueError(
+            "O cálculo de f_ctm neste modelo está limitado a 0 < fck <= 50 MPa."
+        )
+    return 0.30 * f_ck ** (2.0 / 3.0)
 
 
 def _parse_combinacao(combinacao_str):
@@ -79,11 +85,7 @@ def _diametro_representativo(solucao):
 
 def _passo(titulo, formula=None, substituicao=None, resultado=None, observacao=None):
     """
-    Cria um item compatível com o quadro 'Cálculo Detalhado (Passo a Passo)'.
-
-    A fórmula é mantida no campo próprio. No campo de cálculo são apresentadas
-    apenas as linhas numéricas e conclusões, sem os rótulos "Substituição",
-    "Resultado" ou "Observação".
+    'Cálculo Detalhado (Passo a Passo)'.
     """
     dados = {"titulo": titulo}
 
@@ -742,9 +744,6 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
     phi_long_inicial = max(selecionadas[0]["barras"])
     phi_comp_inicial = max(selecionadas[1]["barras"]) if selecionadas[1] else 10.0
 
-    max_iteracoes = 12
-    tolerancia_d_mm = 0.10
-
     # --------------------------------------------------------------------------
     # 2. MATERIAIS
     # --------------------------------------------------------------------------
@@ -768,18 +767,10 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         resultado=f"f_yd = <b>{f_yd:.2f} MPa</b>",
     ))
 
-    if f_ck <= 50:
-        fctm_sub = (
-            f"f_ctm = 0.30 × {f_ck:.2f}^(2/3)"
-        )
-        fctm_formula = r"f_{ctm}=0.30f_{ck}^{2/3}"
-    else:
-        f_cm = f_ck + 8.0
-        fctm_sub = (
-            f"f_cm = {f_ck:.2f} + 8 = {f_cm:.2f} MPa; "
-            f"f_ctm = 2.12 × ln(1 + {f_cm:.2f}/10)"
-        )
-        fctm_formula = r"f_{ctm}=2.12\ln\left(1+\frac{f_{cm}}{10}\right)"
+    fctm_sub = (
+        f"f_ctm = 0.30 × {f_ck:.2f}^(2/3)"
+    )
+    fctm_formula = r"f_{ctm}=0.30f_{ck}^{2/3}"
 
     passos.append(_passo(
         titulo="3. Resistência média à tração do betão",
@@ -820,7 +811,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         raise ValueError("A largura disponível para as armaduras é não positiva.")
 
     # --------------------------------------------------------------------------
-    # 4. ITERAÇÃO GEOMÉTRICA
+    # 4. CONFIRMAÇÃO GEOMÉTRICA DA COMBINAÇÃO SELECIONADA
     # --------------------------------------------------------------------------
     phi_long = phi_long_inicial
     phi_comp = phi_comp_inicial
@@ -829,7 +820,9 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
     solucao_unica = None
     solucao_mista = None
 
-    for iteracao in range(1, max_iteracoes + 1):
+    # A pesquisa finita já fornece os diâmetros da combinação selecionada.
+    # A memória de cálculo confirma essa geometria numa única passagem.
+    for iteracao in (1,):
 
         # ----------------------------------------------------------------------
         # 4.1 ALTURA ÚTIL
@@ -1198,7 +1191,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
             epsilon_sc = epsilon_cu * (1.0 - a / x_lim)
 
             passos.append(_passo(
-                titulo="13. Extensão da armadura de compressão",
+                titulo="13. Extensão da armadura de compressão em x = x_lim",
                 formula=r"\epsilon_{sc}=\epsilon_{cu}\left(1-\frac{a}{x_{lim}}\right)",
                 substituicao=(
                     f"ε_sc = {epsilon_cu:.6f} × "
@@ -1416,7 +1409,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
                     "A armadura de compressão fornecida é inferior à requerida."
                 )
 
-            # A verificação final de MRd é efetuada depois da convergência geométrica.
+            # A verificação final de MRd é efetuada após a confirmação geométrica.
             resultado_iteracao = {
                 "tipo_secao": tipo_secao,
                 "d": d,
@@ -1440,24 +1433,19 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
             }
 
         # ----------------------------------------------------------------------
-        # 5. CONVERGÊNCIA
+        # 5. CONFIRMAÇÃO DA GEOMETRIA UTILIZADA NO CÁLCULO
         # ----------------------------------------------------------------------
-        phi_trac_antigo = phi_long
-        phi_comp_antigo = phi_comp
-
         phi_long = resultado_iteracao["phi_novo"]
-
         if tipo_secao == "armadura_compressao":
             phi_comp = resultado_iteracao["phi_comp_novo"]
 
-        d_novo = h - c_nom - phi_estribo - phi_long / 2.0
+        d_confirmado = h - c_nom - phi_estribo - phi_long / 2.0
 
-        convergiu_d = abs(d_novo - d) <= tolerancia_d_mm
-
-        convergiu_comp = (
-            tipo_secao == "simplesmente_armada"
-            or abs(phi_comp - phi_comp_antigo) <= 1e-9
-        )
+        if abs(d_confirmado - d) > 1e-9:
+            raise ValueError(
+                "Inconsistência geométrica entre a combinação selecionada "
+                "e a altura útil utilizada na memória de cálculo."
+            )
 
         passos.append(_passo(
             titulo=(
@@ -1473,26 +1461,13 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
                     if tipo_secao == "armadura_compressao"
                     else ""
                 )
-                + f"d = {d_novo:.2f} mm"
+                + f"d = {d_confirmado:.2f} mm"
             ),
-            resultado=(
-                "<b>Geometria final confirmada</b>"
-                if convergiu_d and convergiu_comp
-                else "<b>Atualização geométrica necessária</b>"
-            ),
+            resultado="<b>Geometria final confirmada</b>",
         ))
 
-        if convergiu_d and convergiu_comp:
-            break
-
-    else:
-        raise ValueError(
-            "O refinamento da altura útil não convergiu dentro do número "
-            "máximo de iterações."
-        )
-
     # ==========================================================================
-    # 6. VERIFICAÇÃO FINAL APÓS CONVERGÊNCIA
+    # 6. VERIFICAÇÃO FINAL DA SOLUÇÃO SELECIONADA
     # ==========================================================================
     r = resultado_iteracao
     tipo_secao = r["tipo_secao"]
@@ -1511,7 +1486,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         Ast_prov_mm2 = r["As_prov_cm2"] * 100.0
 
         # A armadura de tração efetivamente fornecida deve continuar dentro
-        # do limite máximo depois da convergência geométrica.
+        # do limite máximo após a confirmação geométrica.
         if Ast_prov_mm2 > As_max_mm2 + 1e-9:
             raise ValueError(
                 "A armadura final de tração ultrapassa As,max = 0,04 Ac. "
@@ -1520,12 +1495,12 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
             )
 
         # ----------------------------------------------------------------------
-        # AJUSTE FINAL DA ARMADURA DE COMPRESSÃO PARA GARANTIR DUCTILIDADE
+        # VERIFICAÇÃO FINAL DA ARMADURA DE COMPRESSÃO E DA DUCTILIDADE
         # ----------------------------------------------------------------------
         #
         # A conversão das áreas teóricas em combinações reais pode deslocar a
-        # posição de equilíbrio do eixo neutro. Por isso, depois da convergência
-        # geométrica, a armadura de compressão é novamente verificada.
+        # posição de equilíbrio do eixo neutro. Por isso, após a confirmação
+        # geométrica, a armadura de compressão é verificada com as áreas fornecidas.
         #
         # A solução só é aceite quando:
         #
@@ -1545,175 +1520,127 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         Asc_teorico_min_mm2 = r["Asc_req_cm2"] * 100.0
 
         sol_comp_final = sol_comp
-        estado_final = None
-        xi_final = None
-        M_Rd_Nmm = None
-        M_Rd_kNm = None
-        a_final = None
-
-        for ajuste in range(1, 13):
-
-            combinacao_compressao = sol_comp_final["combinacao_str"]
-            barras_compressao = _parse_combinacao(combinacao_compressao)
-
-            if not barras_compressao:
-                raise ValueError(
-                    "Não foi possível interpretar a armadura de compressão."
-                )
-
-            phi_comp_final = max(barras_compressao)
-            a_final = c_nom + phi_estribo + phi_comp_final / 2.0
-
-            x_lim_final = xi_lim * r["d"]
-
-            if a_final >= x_lim_final:
-                raise ValueError(
-                    "A armadura de compressão selecionada fica fora da zona "
-                    "comprimida correspondente ao limite x/d = 0,45."
-                )
-
-            # Tensões das armaduras avaliadas no estado limite x = x_lim.
-            epsilon_st_lim = epsilon_cu * (r["d"] / x_lim_final - 1.0)
-            sigma_st_lim = min(
-                max(E_s * epsilon_st_lim, 0.0),
-                f_yd,
-            )
-
-            epsilon_sc_lim = epsilon_cu * (
-                1.0 - a_final / x_lim_final
-            )
-            sigma_sc_lim = min(
-                max(E_s * epsilon_sc_lim, 0.0),
-                f_yd,
-            )
-
-            if sigma_sc_lim <= 0:
-                raise ValueError(
-                    "A tensão na armadura de compressão no estado limite "
-                    "de ductilidade é não positiva."
-                )
-
-            Cc_lim_N = 0.8 * x_lim_final * b * f_cd
-            T_lim_N = Ast_prov_mm2 * sigma_st_lim
-
-            # Área de compressão necessária para que, em x = x_lim:
-            #
-            #   T <= Cc + Cs
-            #
-            # Desta forma, a raiz de equilíbrio não fica acima de x_lim.
-            Asc_equilibrio_mm2 = max(
-                0.0,
-                (T_lim_N - Cc_lim_N) / sigma_sc_lim,
-            )
-
-            Asc_alvo_mm2 = max(
-                Asc_teorico_min_mm2,
-                Asc_equilibrio_mm2,
-            )
-
-            if Asc_alvo_mm2 > As_max_mm2 + 1e-9:
-                raise ValueError(
-                    "A área de armadura de compressão necessária para satisfazer "
-                    "a ductilidade ultrapassa As,max = 0,04 Ac."
-                )
-
-            # Selecionar novamente uma combinação real com a área necessária
-            # para garantir também o limite de ductilidade.
-            estado_antes = _resolver_equilibrio_duplamente_armada(
-                Ast_prov_mm2, sol_comp_final["area_total_cm2"] * 100.0,
-                b, r["d"], a_final, f_cd, f_yd, E_s, epsilon_cu,
-            )
-            combinacao_antes = sol_comp_final["combinacao_str"]
-            xi_antes = estado_antes["x_mm"] / r["d"]
-
-            sol_comp_nova, _, _ = escolher(1,
-                Asc_alvo_mm2 / 100.0,
-                largura_disponivel,
-                dg_mm=dg_mm,
-            )
-
-            Asc_prov_mm2 = sol_comp_nova["area_total_cm2"] * 100.0
-
-            if Asc_prov_mm2 > As_max_mm2 + 1e-6:
-                raise ValueError(
-                    "A armadura de compressão fornecida ultrapassa As,max."
-                )
-
-            sol_comp_final = sol_comp_nova
-
-            # Atualizar 'a' se a nova combinação alterar o maior diâmetro.
-            barras_compressao = _parse_combinacao(
-                sol_comp_final["combinacao_str"]
-            )
-            phi_comp_final = max(barras_compressao)
-            a_final = c_nom + phi_estribo + phi_comp_final / 2.0
-
-            # Equilíbrio final com as armaduras realmente fornecidas.
-            estado_final = _resolver_equilibrio_duplamente_armada(
-                Ast_prov_mm2,
-                Asc_prov_mm2,
-                b,
-                r["d"],
-                a_final,
-                f_cd,
-                f_yd,
-                E_s,
-                epsilon_cu,
-            )
-
-            x_final = estado_final["x_mm"]
-            xi_final = x_final / r["d"]
-            z_final = r["d"] - 0.4 * x_final
-
-            M_Rd_Nmm = estado_final["M_Rd_Nmm"]
-            M_Rd_kNm = M_Rd_Nmm / 1e6
-
-            passos.append(_passo(
-                titulo="Verificação da armadura de compressão selecionada",
-                formula=r"A_{sc,eq}=\max(0;(A_{st}\sigma_{st,lim}-0.8x_{lim}bf_{cd})/\sigma_{sc,lim})",
-                substituicao=(
-                    f"Combinação selecionada: {combinacao_antes}; x/d = {xi_antes:.5f} "
-                    f"{'>' if xi_antes > xi_lim else '≤'} {xi_lim:.2f}. "
-                    f"Área teórica: {r['Asc_req_cm2']:.3f} cm²; "
-                    f"área necessária ao equilíbrio em x_lim: {Asc_equilibrio_mm2/100:.3f} cm²; "
-                    f"área mínima adotada na verificação: {Asc_alvo_mm2/100:.3f} cm²."
-                ),
-                resultado=(
-                    f"Equilíbrio final: {sol_comp_final['combinacao_str']}; "
-                    f"a = {a_final:.2f} mm; x = {x_final:.3f} mm; "
-                    f"x/d = {xi_final:.5f}; M_Rd = {M_Rd_kNm:.3f} kNm."
-                ),
-                observacao=(
-                    "Solução aceite: ductilidade e resistência verificadas."
-                    if xi_final <= xi_lim + 1e-9 and M_Rd_Nmm + 1e-6 >= M_Ed_Nmm
-                    else "Nova tentativa necessária para verificar ductilidade e resistência."
-                ),
-            ))
-
-            if (
-                xi_final <= xi_lim + 1e-9
-                and M_Rd_Nmm + 1e-6 >= M_Ed_Nmm
-            ):
-                break
-
-            # Se ainda não satisfizer x/d, elevar explicitamente o alvo
-            # de compressão na iteração seguinte.
-            Asc_teorico_min_mm2 = max(
-                Asc_teorico_min_mm2,
-                Asc_prov_mm2 + 1.0,
-            )
-
-        else:
-            raise ValueError(
-                "Não foi possível encontrar uma combinação de armadura de "
-                "compressão que satisfaça simultaneamente M_Rd >= M_Ed "
-                "e x/d <= 0,45."
-            )
-
         combinacao_compressao = sol_comp_final["combinacao_str"]
         barras_compressao = _parse_combinacao(combinacao_compressao)
+
+        if not barras_compressao:
+            raise ValueError(
+                "Não foi possível interpretar a armadura de compressão."
+            )
+
+        phi_comp_final = max(barras_compressao)
+        a_final = c_nom + phi_estribo + phi_comp_final / 2.0
+        x_lim_final = xi_lim * r["d"]
+
+        if a_final >= x_lim_final:
+            raise ValueError(
+                "A armadura de compressão selecionada fica fora da zona "
+                "comprimida correspondente ao limite x/d = 0,45."
+            )
+
+        # Tensões das armaduras avaliadas no estado limite x = x_lim.
+        epsilon_st_lim = epsilon_cu * (r["d"] / x_lim_final - 1.0)
+        sigma_st_lim = min(
+            max(E_s * epsilon_st_lim, 0.0),
+            f_yd,
+        )
+
+        epsilon_sc_lim = epsilon_cu * (
+            1.0 - a_final / x_lim_final
+        )
+        sigma_sc_lim = min(
+            max(E_s * epsilon_sc_lim, 0.0),
+            f_yd,
+        )
+
+        if sigma_sc_lim <= 0:
+            raise ValueError(
+                "A tensão na armadura de compressão no estado limite "
+                "de ductilidade é não positiva."
+            )
+
+        Cc_lim_N = 0.8 * x_lim_final * b * f_cd
+        T_lim_N = Ast_prov_mm2 * sigma_st_lim
+
+        Asc_equilibrio_mm2 = max(
+            0.0,
+            (T_lim_N - Cc_lim_N) / sigma_sc_lim,
+        )
+
+        Asc_alvo_mm2 = max(
+            Asc_teorico_min_mm2,
+            Asc_equilibrio_mm2,
+        )
+
+        if Asc_alvo_mm2 > As_max_mm2 + 1e-9:
+            raise ValueError(
+                "A área de armadura de compressão necessária para satisfazer "
+                "a ductilidade ultrapassa As,max = 0,04 Ac."
+            )
+
         Asc_prov_cm2 = sol_comp_final["area_total_cm2"]
         Asc_prov_mm2 = Asc_prov_cm2 * 100.0
+
+        if Asc_prov_mm2 + 1e-9 < Asc_alvo_mm2:
+            raise ValueError(
+                "A combinação de armadura de compressão selecionada não "
+                "satisfaz a área necessária à verificação final."
+            )
+
+        if Asc_prov_mm2 > As_max_mm2 + 1e-9:
+            raise ValueError(
+                "A armadura de compressão fornecida ultrapassa As,max = 0,04 Ac."
+            )
+
+        # Equilíbrio final com as armaduras efetivamente fornecidas.
+        estado_final = _resolver_equilibrio_duplamente_armada(
+            Ast_prov_mm2,
+            Asc_prov_mm2,
+            b,
+            r["d"],
+            a_final,
+            f_cd,
+            f_yd,
+            E_s,
+            epsilon_cu,
+        )
+
+        x_final = estado_final["x_mm"]
+        xi_final = x_final / r["d"]
+        z_final = r["d"] - 0.4 * x_final
+        M_Rd_Nmm = estado_final["M_Rd_Nmm"]
+        M_Rd_kNm = M_Rd_Nmm / 1e6
+
+        passos.append(_passo(
+            titulo="24. Verificação final da armadura de compressão selecionada",
+            formula=r"A_{sc,eq}=\max(0;(A_{st}\sigma_{st,lim}-0.8x_{lim}bf_{cd})/\sigma_{sc,lim})",
+            substituicao=(
+                f"Combinação selecionada: {combinacao_compressao}; "
+                f"área teórica: {r['Asc_req_cm2']:.3f} cm²; "
+                f"área necessária ao equilíbrio em x_lim: "
+                f"{Asc_equilibrio_mm2/100:.3f} cm²; "
+                f"área mínima adotada na verificação: "
+                f"{Asc_alvo_mm2/100:.3f} cm²."
+            ),
+            resultado=(
+                f"A_sc,prov = {Asc_prov_cm2:.3f} cm²; "
+                f"a = {a_final:.2f} mm; x = {x_final:.3f} mm; "
+                f"x/d = {xi_final:.5f}; M_Rd = {M_Rd_kNm:.3f} kNm."
+            ),
+            observacao="Verificação final efetuada sem nova pesquisa de armaduras.",
+        ))
+
+        if xi_final > xi_lim + 1e-9:
+            raise ValueError(
+                "A solução final não satisfaz a condição de ductilidade "
+                "x/d <= 0,45."
+            )
+
+        if M_Rd_Nmm + 1e-6 < M_Ed_Nmm:
+            raise ValueError(
+                "A secção duplamente armada selecionada não satisfaz "
+                "M_Rd >= M_Ed."
+            )
 
         # Verificação final dos limites de armadura fornecida.
         if Ast_prov_mm2 > As_max_mm2 + 1e-9:
@@ -1734,7 +1661,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         r["Asc_prov_cm2"] = Asc_prov_cm2
 
         passos.append(_passo(
-            titulo="24. Armaduras finais adotadas",
+            titulo="25. Armaduras finais adotadas",
             formula=r"A_{st,prov}\geq A_{st,req}\ ;\ A_{sc,prov}\geq A_{sc,req}",
             substituicao=(
                 f"Tração: {sol_tracao['combinacao_str']} "
@@ -1751,7 +1678,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         ))
 
         passos.append(_passo(
-            titulo="25. Equilíbrio final da secção duplamente armada",
+            titulo="26. Equilíbrio final da secção duplamente armada",
             formula=r"A_{st}\sigma_{st}=0.8xbf_{cd}+A_{sc}\sigma_{sc}",
             substituicao=(
                 f"{Ast_prov_mm2:.2f} × "
@@ -1764,7 +1691,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         ))
 
         passos.append(_passo(
-            titulo="26. Verificação da ductilidade",
+            titulo="27. Verificação da ductilidade",
             formula=r"\xi=\frac{x}{d}\leq0.45",
             substituicao=(
                 f"ξ = {x_final:.2f} / {r['d']:.2f}"
@@ -1775,7 +1702,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         ))
 
         passos.append(_passo(
-            titulo="27. Momento resistente final da secção",
+            titulo="28. Momento resistente final da secção",
             formula=r"M_{Rd}=C_c(d-0.4x)+C_s(d-a)",
             substituicao=(
                 f"M_Rd = {estado_final['Cc_N']:.2f} × "
@@ -1791,7 +1718,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         ))
 
         passos.append(_passo(
-            titulo="28. Verificação resistente final",
+            titulo="29. Verificação resistente final",
             formula=r"M_{Rd}\geq M_{Ed}",
             substituicao=(
                 f"{M_Rd_kNm:.2f} kNm ≥ {M_Ed_kNm:.2f} kNm"
@@ -1862,7 +1789,7 @@ def _dimensionar_viga_relatorio(b, h, f_ck, f_yk, M_Ed_kNm, c_nom, dg_mm=20.0, s
         epsilon_c=epsilon_cu2,
     )
 
-    numero_extensoes = 29 if tipo_secao == "armadura_compressao" else 26
+    numero_extensoes = 30 if tipo_secao == "armadura_compressao" else 26
 
     passos.append(_passo(
         titulo=f"{numero_extensoes}. Extensão final da armadura tracionada",

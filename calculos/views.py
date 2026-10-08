@@ -38,6 +38,7 @@ def formatar_latex_para_html(texto):
         r'\alpha': 'α',
         r'\beta': 'β',
         r'\gamma': 'γ',
+        r'\Delta': 'Δ',
         r'\lambda': 'λ',
         r'\mu': 'μ',
         r'\phi': 'φ',
@@ -128,11 +129,50 @@ ROTULOS_LIGACAO_INPUT = {
     'livre-encab': 'Livre - Encastrado',
 }
 
+CLASSES_BETAO = {
+    '20': 'C20/25',
+    '25': 'C25/30',
+    '30': 'C30/37',
+    '35': 'C35/45',
+    '40': 'C40/50',
+    '45': 'C45/55',
+    '50': 'C50/60',
+}
 
-def _formatar_valor_input(key, value):
+
+def _normalizar_numero_input(value):
+    """Normaliza valores numéricos guardados como texto para apresentação."""
+    try:
+        numero = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+
+    if numero.is_integer():
+        return str(int(numero))
+
+    return str(value)
+
+
+def _formatar_valor_input(key, value, elemento=None):
     if key == 'cond_ligacao':
         return ROTULOS_LIGACAO_INPUT.get(value, value)
+
+    if key == 'f_ck':
+        valor = _normalizar_numero_input(value)
+        return CLASSES_BETAO.get(valor, valor)
+
+    if key == 'f_yk':
+        valor = _normalizar_numero_input(value)
+        return f"A{valor}"
+
     return value
+
+
+def _rotulo_input(elemento, key, rotulo_padrao):
+    """Adapta o rótulo ao significado físico do parâmetro em cada módulo."""
+    if elemento == 'Viga' and key == 'M_Ed':
+        return 'Momento fletor de cálculo'
+    return rotulo_padrao
 
 
 
@@ -390,9 +430,13 @@ def historico_detalhe_view(request, calculo_id):
             if key in INPUT_MAP:
                 info = INPUT_MAP[key]
                 input_formatado.append({
-                    'label': info['label'],
+                    'label': _rotulo_input(
+                        calculo.elemento, key, info['label']
+                    ),
                     'symbol': info['symbol'],
-                    'value': _formatar_valor_input(key, value),
+                    'value': _formatar_valor_input(
+                        key, value, calculo.elemento
+                    ),
                     'unit': info['unit']
                 })
 
@@ -477,8 +521,12 @@ def gerar_relatorio_pdf_view(request, calculo_id):
         if key in INPUT_MAP:
             info = INPUT_MAP[key]
             input_formatado.append({
-                'label': info['label'],
-                'value': _formatar_valor_input(key, value),
+                'label': _rotulo_input(
+                    calculo.elemento, key, info['label']
+                ),
+                'value': _formatar_valor_input(
+                    key, value, calculo.elemento
+                ),
                 'unit': info['unit']
             })
 

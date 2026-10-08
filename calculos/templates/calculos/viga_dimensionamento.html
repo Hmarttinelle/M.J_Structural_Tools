@@ -9,7 +9,7 @@
         <div class="engineering-header-icon"><i class="fa-solid fa-grip-lines"></i></div>
         <div>
             <h1>Dimensionamento de Viga</h1>
-            <p>Flexão simples em betão armado segundo a EN 1992-1-1 (Eurocódigo 2).</p>
+            <p>Flexão simples em betão armado segundo a NP EN 1992-1-1:2010 (Eurocódigo 2).</p>
         </div>
     </header>
 
@@ -18,14 +18,14 @@
         <section class="technical-card input-card">
             <div class="technical-card-heading">
                 <div><span class="eyebrow">Dados de entrada</span><h2>Geometria, materiais e esforço</h2></div>
-                <span class="standard-chip">EN 1992-1-1</span>
+                <span class="standard-chip">NP EN 1992-1-1:2010</span>
             </div>
             <form method="post" class="engineering-form">
                 {% csrf_token %}
                 <div class="field-grid two-columns">
                     <div class="form-group"><label>Largura da secção <span>b [mm]</span></label><input type="number" name="b" value="{{ input_data.b|default:'300' }}" required min="1"></div>
                     <div class="form-group"><label>Altura da secção <span>h [mm]</span></label><input type="number" name="h" value="{{ input_data.h|default:'500' }}" required min="1"></div>
-                    <div class="form-group"><label>Classe do Betão</label><select name="f_ck" class="form-control"><option value="20" {% if input_data.f_ck == '20' %}selected{% endif %}>C20/25</option><option value="25" {% if not input_data.f_ck or input_data.f_ck == '25' %}selected{% endif %}>C25/30</option><option value="30" {% if input_data.f_ck == '30' %}selected{% endif %}>C30/37</option><option value="35" {% if input_data.f_ck == '35' %}selected{% endif %}>C35/45</option><option value="40" {% if input_data.f_ck == '40' %}selected{% endif %}>C40/50</option></select></div>
+                    <div class="form-group"><label>Classe do Betão</label><select name="f_ck" class="form-control"><option value="20" {% if input_data.f_ck == '20' %}selected{% endif %}>C20/25</option><option value="25" {% if not input_data.f_ck or input_data.f_ck == '25' %}selected{% endif %}>C25/30</option><option value="30" {% if input_data.f_ck == '30' %}selected{% endif %}>C30/37</option><option value="35" {% if input_data.f_ck == '35' %}selected{% endif %}>C35/45</option><option value="40" {% if input_data.f_ck == '40' %}selected{% endif %}>C40/50</option><option value="45" {% if input_data.f_ck == '45' %}selected{% endif %}>C45/55</option><option value="50" {% if input_data.f_ck == '50' %}selected{% endif %}>C50/60</option></select></div>
                     <div class="form-group"><label>Classe do Aço</label><select name="f_yk" class="form-control"><option value="400" {% if input_data.f_yk == '400' %}selected{% endif %}>A400</option><option value="500" {% if not input_data.f_yk or input_data.f_yk == '500' %}selected{% endif %}>A500</option></select></div>
                     <div class="form-group"><label>Momento de cálculo <span>M<sub>Ed</sub> [kNm]</span></label><input type="number" step="0.1" name="M_Ed" value="{{ input_data.M_Ed|default:'120' }}" required min="0.1"></div>
                     <div class="form-group"><label>Recobrimento nominal <span>c<sub>nom</sub> [mm]</span></label><input type="number" name="c_nom" value="{{ input_data.c_nom|default:'30' }}" required min="1"></div>
@@ -101,7 +101,7 @@
                     <div class="guidance-icon"><i class="fa-solid fa-ruler-combined"></i></div>
                     <h2>Dimensionamento de viga</h2>
                     <p>Introduza os dados da secção e o momento de cálculo. A aplicação determina a armadura longitudinal e verifica os critérios resistentes implementados.</p>
-                    <ul class="guidance-list"><li><i class="fa-solid fa-check"></i> Classes de betão até C40/50</li><li><i class="fa-solid fa-check"></i> Aços A400 e A500</li><li><i class="fa-solid fa-check"></i> Relatório PDF e representação SVG</li></ul>
+                    <ul class="guidance-list"><li><i class="fa-solid fa-check"></i> Classes de betão até C50/60</li><li><i class="fa-solid fa-check"></i> Aços A400 e A500</li><li><i class="fa-solid fa-check"></i> Relatório PDF e representação SVG</li></ul>
                 </section>
             {% endif %}
 

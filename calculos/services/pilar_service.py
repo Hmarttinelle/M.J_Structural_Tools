@@ -25,10 +25,18 @@ PHI_ESTRIBO_MM = 8.0
 DG_MM = 20.0
 
 # Hipótese associada à interface com um único momento de primeira ordem:
-# M01 = M02 = MEd, logo r_m = 1 e C = 0.70.
+# após a consideração da imperfeição geométrica e da excentricidade mínima,
+# adota-se M01 = M02 = M0Ed, logo r_m = 1 e C = 0.70.
 C_ESBELTEZA = 0.70
 N_BAL = 0.40
 C_CURVATURA = 10.0
+
+# Critérios numéricos da resolução de N_Rd(x) = N_Ed por bisseção.
+# São critérios de implementação, não parâmetros normativos.
+EQUILIBRIO_AXIAL_MAX_EXPANSOES = 40
+EQUILIBRIO_AXIAL_MAX_ITERACOES = 140
+EQUILIBRIO_AXIAL_TOL_ABS_N = 1.0
+EQUILIBRIO_AXIAL_TOL_REL = 1e-8
 
 # Fatores de comprimento efetivo adotados para os casos idealizados de apoio.
 # O utilizador pode substituir o valor calculado introduzindo l0 manualmente.
@@ -399,7 +407,7 @@ def _resolver_equilibrio_axial(b_mm, h_mm, f_cd, f_yd, posicoes, N_Ed_N):
     x_sup = max(h_mm, 1.0)
     e_sup = _estado_secao(x_sup, b_mm, h_mm, f_cd, f_yd, posicoes)
 
-    for _ in range(40):
+    for _ in range(EQUILIBRIO_AXIAL_MAX_EXPANSOES):
         if e_sup["N_Rd_N"] >= N_Ed_N:
             break
         x_sup *= 2.0
@@ -410,11 +418,15 @@ def _resolver_equilibrio_axial(b_mm, h_mm, f_cd, f_yd, posicoes, N_Ed_N):
     if e_inf["N_Rd_N"] > N_Ed_N:
         return None
 
-    for _ in range(140):
+    for _ in range(EQUILIBRIO_AXIAL_MAX_ITERACOES):
         x = 0.5 * (x_inf + x_sup)
         e = _estado_secao(x, b_mm, h_mm, f_cd, f_yd, posicoes)
         erro = e["N_Rd_N"] - N_Ed_N
-        if abs(erro) <= max(1.0, abs(N_Ed_N) * 1e-8):
+        tolerancia_N = max(
+            EQUILIBRIO_AXIAL_TOL_ABS_N,
+            abs(N_Ed_N) * EQUILIBRIO_AXIAL_TOL_REL,
+        )
+        if abs(erro) <= tolerancia_N:
             return e
         if erro < 0:
             x_inf = x
@@ -483,12 +495,19 @@ def _avaliar_candidata(
 
 
 def _criterio(sol):
+    """Critério hierárquico de seleção da solução resistente.
+
+    O último termo apenas torna explícito o desempate determinístico já
+    implícito na ordem de geração: em igualdade integral dos restantes
+    critérios, mantém-se preferência pela disposição perimetral.
+    """
     return (
         round(sol["area_total_cm2"], 9),
         sol["n_barras"],
         sol["n_diametros"],
         sol["diametro_max_mm"],
         sol["combinacao_str"],
+        0 if sol.get("disposicao") == "perimetral" else 1,
     )
 
 
@@ -826,9 +845,9 @@ def gerar_graficos_materiais_svg(f_ck, f_cd, f_yd, E_s, epsilon_c,
     """Estado resistente final, não estado de serviço sob MEd.
 
     A curva parábola-retângulo é apenas uma referência para fck <= 50 MPa.
-    O equilíbrio existente continua a usar o bloco retangular equivalente.
-    Não se extrapola esta referência para betões de alta resistência, pois
-    o serviço atual mantém epsilon_cu = 3,5 por mil para todas as classes.
+    O equilíbrio resistente continua a usar o bloco retangular equivalente.
+    Não se apresenta extrapolação para fck > 50 MPa, porque essas classes
+    estão fora do âmbito do modelo implementado nesta versão.
     """
     from html import escape
 
